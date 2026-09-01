@@ -3,13 +3,36 @@
   "lecturer": "נמרוד טלמון",
   "affiliation": "המחלקה להנדסת תעשייה וניהול, אוניברסיטת בן-גוריון",
   "about": "איך לעשות סימולציה, מההתחלה עד הסוף: מידול המערכת, יצירת הקלט, בניית הניסוי וניתוח הפלט. הקורס מתרכז בסימולציית מונטה-קרלו דיסקרטית, סטוכסטית ודינמית, ומשלב תאוריה ופרקטיקה בפייתון. החומר התאורטי בסרטונים מוקלטים; בכיתה חוזרים עליו ומתרגלים; לצד זה מעבדות פייתון ואפליקציה.",
-  "arc": ["הסתברות", "התאמת התפלגות", "דגימה", "פסאודו-אקראיות", "תכנות אירועים", "ניתוח פלט", "השוואת חלופות"],
+  "arc": [
+    "הסתברות",
+    "התאמת התפלגות",
+    "דגימה",
+    "פסאודו-אקראיות",
+    "תכנות אירועים",
+    "ניתוח פלט",
+    "השוואת חלופות"
+  ],
   "links": [
-    {"title": "סרטוני הקורס", "desc": "החומר התאורטי, מחולק לפי הרצאות", "url": "videos.html"},
-    {"title": "תרגילי כיתה", "desc": "האפליקציה שנעבוד איתה בהרצאות: חימום, שיפוט, אתגר", "url": "exercises/"},
-    {"title": "מעבדות", "desc": "מחברות הפייתון של התרגולים", "url": "https://drive.google.com/drive/folders/1OVMwj6ZujrUZnjXKSA6wnJ8OMB98qwif?usp=sharing"},
-    {"title": "אפליקציה", "desc": "כלי אינטראקטיבי לניסויים בחומר הקורס", "url": "https://yarden231-simulation-course-app-main-mbsl5g.streamlit.app/"},
-    {"title": "סילבוס", "desc": "דרישות, הרכב הציון ולוח המפגשים", "url": "https://docs.google.com/document/d/1TCdRmGjogOFgegOKPcEx-1G9OIPt-dA1G2zzt47zUz8/edit?usp=drive_link"}
+    {
+      "title": "סרטוני הקורס",
+      "desc": "החומר התאורטי, מחולק לפי הרצאות",
+      "url": "videos.html"
+    },
+    {
+      "title": "תרגילי כיתה",
+      "desc": "האפליקציה שנעבוד איתה בהרצאות: חימום, שיפוט, אתגר",
+      "url": "exercises/"
+    },
+    {
+      "title": "מעבדות",
+      "desc": "מחברות הפייתון של התרגולים",
+      "url": "https://drive.google.com/drive/folders/1OVMwj6ZujrUZnjXKSA6wnJ8OMB98qwif?usp=sharing"
+    },
+    {
+      "title": "אפליקציה",
+      "desc": "כלי אינטראקטיבי לניסויים בחומר הקורס",
+      "url": "https://yarden231-simulation-course-app-main-mbsl5g.streamlit.app/"
+    }
   ],
   "footer": "תשפ\"ז",
   "home_url": "https://nimrodtalmon.github.io/sim-class/"

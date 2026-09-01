@@ -34,10 +34,10 @@
 - 7 | דגימה 3 - משתנה מקרי סופי בדיד מקרה כללי | https://drive.google.com/file/d/190wsyd6HNcgRz1Bu1qaZSl0uFBuZV_8W/view
 - 8 | דגימה 4 - טרנספורם הופכי אינטואיציה | https://drive.google.com/file/d/14Mo1pWBtl0zIj8QoAP29L9Usp6iEmU_n/view
 - 9 | דגימה 5 - טרנספורם הופכי דוגמאות | https://drive.google.com/file/d/1Hx8acZr7ts_3OvRs8BX6ckmvZks_pmbY/view
-- 10 | דגימה 6 - טרנספורם הופכי הוכחה וסיכום | https://drive.google.com/file/d/1U9AiRg9L1pGwgLEBtG1DudMo2qOMWjRV/view | לא צריך לעבור על ההוכחה
+- 10 | דגימה 6 - טרנספורם הופכי הוכחה וסיכום | https://drive.google.com/file/d/1U9AiRg9L1pGwgLEBtG1DudMo2qOMWjRV/view
 - 13 | דגימה 9 - קומפוזיציה הקדמה | https://drive.google.com/file/d/1QAUkiJgRSjXTU0gP5fQr_zPnwu_GD0oa/view
 - 14 | דגימה 10 - קומפוזיציה דוגמאות | https://drive.google.com/file/d/1VgHtB0pbIsHONMsDAXXuv91IEIZjdElC/view
-- 15 | דגימה 11 - קומפוזיציה הוכחה וסיכום | https://drive.google.com/file/d/1Cc5emGlcA8Awuffw5EtFBfguUSnXo9jG/view | לא צריך לעבור על ההוכחה
+- 15 | דגימה 11 - קומפוזיציה הוכחה וסיכום | https://drive.google.com/file/d/1Cc5emGlcA8Awuffw5EtFBfguUSnXo9jG/view
 
 ## הרצאה 5
 - 16 | דגימה 12 - קבלה דחייה הקדמה | https://drive.google.com/file/d/17K-y0tUWr0CBTc4OCL2DNP1faYpP4Q72/view

@@ -189,6 +189,7 @@
 ---
 
 ## שיעור 5 — אלגוריתמי דגימה ב
+בסוף השיעור, אחרי שנסיים עם אלגוריתמי דגימה: [הרצאה על MCMC](https://docs.google.com/presentation/d/1_5Rz3Mw6DlqAI6UbcWmMFCkNZFMuaihqE4PeVv57KeI/edit?usp=drive_link)
 
 ### חימום
 

@@ -17,6 +17,7 @@
 ---
 
 ## שיעור 2 — חזרה על הסתברות והתאמת התפלגות למודל
+מצגת: [התפלגויות נחמדות](https://drive.google.com/file/d/1N4ohVMZTzbwMZclJrtPaBBIXXDpouXyG/view)
 
 ### חימום
 
@@ -75,6 +76,7 @@
 ---
 
 ## שיעור 3 — מבחני טיב התאמה
+מצגות: [חי בריבוע](https://drive.google.com/file/d/1aUr9J_IZetVP8PKLfYOxUPirboZA13So/view) · [קולמוגורוב-סמירנוב](https://drive.google.com/file/d/18KU9xCkl3YrkLg8o28swUlPAF7xPQ_Z5/view)
 
 ### חימום
 
@@ -248,7 +250,7 @@
 
 אין פזמון. תרקדו.
 
-[מצגת ההרצאה](https://docs.google.com/presentation/d/1vssIUFy1TPZ2x_URWY4JT9OrC3tbJCBspfEFUxYqROA/edit?usp=drive_link)
+[מצגת ההרצאה](https://docs.google.com/presentation/d/1vssIUFy1TPZ2x_URWY4JT9OrC3tbJCBspfEFUxYqROA/edit?usp=drive_link) · [תאוריה של תכנות אירועים](https://drive.google.com/file/d/1isLed1SEXF-CawwGkL1c3XZBz7Osh5PL/view)
 
 ---
 
@@ -261,9 +263,12 @@
 - הסימולציה נגמרת כששורתו 1000 לקוחות.
 - המדד: זמן ההמתנה הממוצע לקפה (מהכניסה עד קבלת המשקה, כולל זמן ההכנה).
 
+מצגות לדוגמאות נוספות: [אבטחה](https://drive.google.com/file/d/1QLod4qTAT8RSNL25_PG6py57fD6cn5mv/view) · [מחשבים](https://drive.google.com/file/d/1M71kzLH-4lVfrI4BtOvAPjSgkliPgDWo/view)
+
 ---
 
 ## שיעור 8 — תכנון וניתוח
+מצגת: [תכנון הניסוי וניתוח הפלט](https://drive.google.com/file/d/1eFYfqRMVqevG7JnU5nM_wTHM1uSFZM9V/view)
 
 ### חימום
 
@@ -335,6 +340,7 @@
 ---
 
 ## שיעור 10 — השוואה בין שתי חלופות
+מצגת: [השוואת חלופות](https://drive.google.com/file/d/1sOC69pGooGBIBf1FVGEis4jXE9D2h0Mm/view)
 
 ### חימום
 

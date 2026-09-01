@@ -12,6 +12,8 @@
 
 אין פזמון. תרקדו.
 
+[מצגת ההרצאה](https://docs.google.com/presentation/d/1YKGg11YuUvN2kNIQnJt6fZyuDoxXs9jmhc-oUG4takE/edit?usp=drive_link)
+
 ---
 
 ## שיעור 2 — חזרה על הסתברות והתאמת התפלגות למודל
@@ -245,6 +247,8 @@
 
 אין פזמון. תרקדו.
 
+[מצגת ההרצאה](https://docs.google.com/presentation/d/1vssIUFy1TPZ2x_URWY4JT9OrC3tbJCBspfEFUxYqROA/edit?usp=drive_link)
+
 ---
 
 ## שיעור 7 — תכנות אירועים ב
@@ -404,7 +408,7 @@
 ---
 
 ## שיעור 12 — חזרה והעשרה
-*(ריק בינתיים)*
+[מצגת הסיכום](https://docs.google.com/presentation/d/1LW4a90O1JJy65eLVlJXGNMMcWD-iTaltFXH9f34_gbY/edit?usp=drive_link)
 
 ---
 

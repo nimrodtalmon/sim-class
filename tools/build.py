@@ -47,9 +47,17 @@ def parse(md):
             cur['sections'].append(sec)
             continue
         if sec is not None and sec['tier'] == 'deck':
+            if line.strip() == '---':
+                continue
             m = re.match(r'^#### ?(.*)$', line)
             if m:
                 flush(); item = {'id': '', 'title': m.group(1).strip(), 'lines': []}
+                continue
+            m = re.match(r'^@svg\s+(\S+)$', line.strip())
+            if m and item is not None:         # inline an SVG file (path relative to exercises/)
+                svg = (ROOT / 'exercises' / m.group(1)).read_text(encoding='utf8')
+                svg = re.sub(r'^<\?xml[^>]*\?>\s*', '', svg)
+                item['lines'] += ['```svg', svg.replace('\n', ' '), '```']
                 continue
             if item is not None:
                 if line.strip().startswith('```'):

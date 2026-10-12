@@ -22,3 +22,8 @@ python3 tools/build_site.py   # -> index.html, videos.html, labs.html
 - ```` ```mermaid ```` diagrams, ```` ```svg ```` inline SVG, `@svg path` inlines an SVG file
 - a line `$$ LaTeX $$` is display math (KaTeX)
 - inline: `**bold**`, `*italic*`, `$math$`, `` `code` ``, `[text](url)`, `^{sup}`, `_{sub}`
+
+## Layout
+Every slide is fitted to the screen (no scrolling): the `Fit` component in `app.jsx` shrinks the font scale
+(and, as a last resort, scales the card) until the content fits, on desktop and phone. Sizes inside slides
+are in `em` so they scale together. Phone: tap the left half for next (hidden parts first), the right half for previous.

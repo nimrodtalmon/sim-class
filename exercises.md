@@ -642,7 +642,306 @@ SIMULATION — INTRODUCTION
 
 אין פזמון. תרקדו.
 
-[מצגת ההרצאה](https://docs.google.com/presentation/d/1vssIUFy1TPZ2x_URWY4JT9OrC3tbJCBspfEFUxYqROA/edit?usp=drive_link) · [תאוריה של תכנות אירועים](https://drive.google.com/file/d/1isLed1SEXF-CawwGkL1c3XZBz7Osh5PL/view)
+מצגת נוספת: [תאוריה של תכנות אירועים](https://drive.google.com/file/d/1isLed1SEXF-CawwGkL1c3XZBz7Osh5PL/view)
+
+### מצגת — תכנות אירועים
+
+####
+!! תכנות אירועים
+
+נמרוד טלמון
+
+#### פרדיגמת תכנות
+![wide:card:פרדיגמות תכנות](slides/l6/paradigms.png)
+
+#### פרדיגמת תכנות
+![card:פרדיגמות תכנות](slides/l6/paradigms.png)
+!! תכנות אירועים!
+
+> יש עוד אופציות…
+
+#### תכנות אירועים — פילוסופיה
+- מערכת (מודלים בדידים)
+  - ישויות
+  - משאבים
+  - אירועים: משנים את מצב המערכת
+  - בפרט, מצב המערכת מתואר על ידי פונקציית מדרגות
+
+> אירועים משנים את מצב המערכת באופן "מיידי". **אירועים הם לב העניין!**
+
+#### תכנות אירועים — רעיונות מרכזיים
+- שעון סימולציה
+
+> נרצה "להזיז את השעון" ולשנות את מצב המערכת בהתאם לאירועים
+![שעון](slides/l6/clock.jpg)
+
+#### איך להזיז את השעון?
+- אופציה אחת: באופן "רציף" — **בזבזני!**
+
+#### דוגמה — כספומט (שעון "רציף")
+```
+QueueLength = 0
+NJobsServed = 0
+SumResidenceTimes = 0  ## מדד: זמן המתנה ממוצע
+ServerBusy = false
+generate NextArrivalTime   // random # generation  ## NextArrivalTime = X
+NIncrements = MaxSimTime / 0.001
+for SimTime = 1*0.001 to NIncrements*0.001 do  ## שעון "רציף"
+   if SimTime = NextArrivalTime then  ## אירוע מסוג הגעה
+      add new jobobject to queue
+      QueueLength++
+      generate NextArrivalTime   // random # generation
+      if not ServerBusy then
+         ServerBusy = true
+         jobobject.ArrivalTime = SimTime
+         generate ServiceFinishedtime  ## ServiceFinishedtime = Y
+         currentjob = jobobject
+         delete head of queue and assign to currentjob
+         QueueLength--
+   else
+      if SimTime = ServiceFinishedtime then  ## אירוע מסוג סיום שירות
+         NJobsServed++
+         SumResidenceTimes += SimTime - currentjob.ArrivalTime  ## סוכם (למדד)
+         if QueueLength > 0 then
+            generate ServiceFinishedtime   // random # generation
+            delete currentjob from queue
+            QueueLength--
+         else
+            ServerBusy = false
+print out SumResidenceTimes / NJobsServed
+```
+
+#### איך להזיז את השעון?
+- אופציה אחת: באופן "רציף" — **בזבזני!**
+- אופציה שנייה: לקפוץ לזמן של האירוע הבא — **!!!**
+
+#### איך להזיז את השעון?
+במקום השורה
+```
+for SimTime = 1*0.001 to NIncrements*0.001 do
+```
+!! נחליף!
+```
+if ServerBusy and NextArrivalTime < ServiceFinishedtime or
+   not ServerBusy then
+   SimTime = NextArrivalTime  ## קופצים לאירוע הבא
+else
+   SimTime = ServiceFinishedtime
+```
+
+#### איך להזיז את השעון?
+- אופציה שנייה: לקפוץ לזמן של האירוע הבא — **!!!**
+
+> **נשתמש ביומן אירועים כדי שהקסם יקרה:** אירועים עתידיים מסודרים לפי זמן!
+
+- ביומן מחכים אירועים עתידיים, מסודרים לפי זמן
+- נדע לקפוץ לאירוע הבא
+- למשל, בדוגמת הכספומט: תמיד יש ביומן לפחות אירוע הגעה אחד, ולפעמים גם אירוע סיום שירות אחד
+- מימוש: priority heap
+![יומן](slides/l6/calendar.jpg)
+
+#### דוגמה
+אולי הדוגמה הכי פשוטה: תור בודד
+- פקיד יחיד בבנק; לקוחות מגיעים באופן בלתי תלוי (למשל, מעריכי), וזמן השירות גם בלתי תלוי (למשל, אחיד בין 3 ל-4)
+- **חשוב לזכור סיום!** למשל: יום עבודה של 8 שעות
+- **חשוב לזכור מטרות!!!** למשל:
+  - זמן המתנה ממוצע בתור (ללקוח)
+  - אורך תור ממוצע (בזמן)
+  - ניצולת שרת
+![תור בודד](slides/svg/queue-vertical.svg)
+
+#### דוגמה
+בשביל להבין מה קורה:
+- **מהן הישויות במערכת?**
++ לקוחות
+- **מהם המשאבים במערכת?**
++ פקיד
+- **מהו המצב של המערכת?**
++ האם השרת תפוס? מה יש בתור?
+- **אילו אירועים יש?**
++ הגעת לקוח, סיום שירות
+![מצלמה](slides/l6/camera.jpg)
+
+#### דוגמה — מה צריך טכנית?
+- שעון (לזכור את הזמן "עכשיו")
+- יומן אירועים (שיכיל אירועים עתידיים)
+- **משתני מצב:**
+  - משתנה בינארי "מצב שרת"
+  - משתנה רשימה "תוכן התור"
+- סוכמים:
+  - זמני המתנה עד עכשיו
+  - אורך התור עד עכשיו
+  - ניצולת עד עכשיו
+- קבועים:
+  - זמן סיום (למשל, כשהשעון על 8·60)
+
+#### דוגמה כללית — לולאה ראשית
+```mermaid
+flowchart TD
+  S([Start]) --> M["<b>Main program</b><br/>0. Invoke the initialization routine<br/>1. Invoke the timing routine<br/>2. Invoke event routine i<br/><i>(1–2 repeatedly)</i>"]
+  M <-->|0| I["<b>Initialization routine</b><br/>1. Set simulation clock = 0<br/>2. Initialize system state<br/>and statistical counters<br/>3. Initialize event list"]
+  M <-->|1| T["<b>Timing routine</b><br/>1. Determine the next event type, say, i<br/>2. Advance the simulation clock"]
+  M -->|2| E["<b>Event routine i</b><br/>1. Update system state<br/>2. Update statistical counters<br/>3. Generate future events<br/>and add to event list"]
+  E <--> L["<b>Library routines</b><br/>Generate random variates"]
+  E --> D{"Is simulation<br/>over?"}
+  D -->|No| M
+  D -->|Yes| R["<b>Report generator</b><br/>1. Compute estimates of interest<br/>2. Write report"]
+  R --> X([Stop])
+```
+
+#### דוגמת שרת בודד — אירועים
+| תיאור האירוע | סוג האירוע |
+|---|---|
+| הגעת לקוח למערכת | 1 |
+| יציאת לקוח מהמערכת לאחר סיום השירות | 2 |
+
+> **אירועים משנים את מצב המערכת**
+
+> כלל אצבע: סיום שירות עדיף על כניסה לשירות (ובכל מקרה, אירוע הוא נקודה בזמן, לא משהו מתמשך)
+
+#### דוגמה — טיפול **באירוע** הגעת לקוח
+> מה יקרה עם הלקוח השני?
+```mermaid
+flowchart TD
+  A([Arrival event]) --> B["Schedule the next<br/>arrival event"]
+  N["חשוב — בלי זה ניתקע"] -.- B
+  B --> C{"Is the server<br/>busy?"}
+  C -->|Yes| D["Add 1 to the<br/>number in queue"]
+  D --> E{"Is the queue<br/>full?"}
+  E -->|Yes| F["Write error message<br/>and stop simulation"]
+  E -->|No| G["Store time of arrival<br/>of this customer"]
+  C -->|No| H["Set delay = 0 for this customer<br/>and gather statistics"]
+  H --> I["Add 1 to the number<br/>of customers delayed"]
+  I --> J["Make the server busy"]
+  J --> K["Schedule a departure event<br/>for this customer"]
+  G --> R([Return])
+  K --> R
+  classDef hot stroke:#F2B441,stroke-width:3px
+  classDef note fill:none,stroke:#F2B441,stroke-dasharray:4 4,color:#F2B441
+  class B hot
+  class N note
+```
+
+#### דוגמה — טיפול **באירוע** סיום שירות
+```mermaid
+flowchart TD
+  A([Departure event]) --> C{"Is the queue<br/>empty?"}
+  C -->|Yes| D["Make the server idle"]
+  D --> E["Eliminate departure event<br/>from consideration"]
+  C -->|No| F["Subtract 1 from<br/>the number in queue"]
+  F --> G["Compute delay of customer entering<br/>service and gather statistics"]
+  G --> H["Add 1 to the number<br/>of customers delayed"]
+  H --> I["Schedule a departure event<br/>for this customer"]
+  N["הלקוח הבא נכנס לשירות,<br/>צריך לדאוג לאירוע יציאה"] -.- I
+  I --> J["Move each customer in queue<br/>(if any) up one place"]
+  E --> R([Return])
+  J --> R
+  classDef hot stroke:#F2B441,stroke-width:3px
+  classDef note fill:none,stroke:#F2B441,stroke-dasharray:4 4,color:#F2B441
+  class I hot
+  class N note
+```
+
+#### דוגמה — לולאה ראשית
+| תיאור האירוע | סוג האירוע |
+|---|---|
+| הגעת לקוח למערכת | 1 |
+| יציאת לקוח מהמערכת לאחר סיום השירות | 2 |
+```mermaid
+flowchart TD
+  S([Start]) --> M["<b>Main program</b><br/>0. Invoke the initialization routine<br/>1. Invoke the timing routine<br/>2. Invoke event routine i"]
+  M <-->|0| I["<b>Initialization routine</b>"]
+  M <-->|1| T["<b>Timing routine</b><br/>determine next event type i,<br/>advance the clock"]
+  M -->|2| E["<b>Event routine i</b><br/>1 = arrival, 2 = departure"]
+  E --> D{"Is simulation<br/>over?"}
+  D -->|No| M
+  D -->|Yes| R["<b>Report generator</b>"]
+```
+
+#### דוגמה — הרצה
+- הרצת שרת יחיד עם תור, למשך 5 דקות
+- זמן בין הגעות מעריכי עם תוחלת 3 דקות
+- משך השירות אחיד בין 2 ל-3 דקות
+
+#### דוגמה — הרצה
+> **Q(t)**: אורך תור ממוצע (בזמן) · **B(t)**: ניצולת שרת (ממוצע בזמן) · **סך עיכוב**: בשביל זמן המתנה ממוצע (בלקוחות)
+
+| אירוע | שעון | מצב שרת | בתור | זמני הגעה בתור | זמן אירוע אחרון | הגעה הבאה (A) | יציאה הבאה (D) | עוכבו | סך עיכוב | שטח מתחת Q | שטח מתחת B |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+|+ אתחול | 0 | 0 | 0 | — | 0 | 0.4 | ∞ | 0 | 0 | 0 | 0 |
+|+ הגעה | 0.4 | 1 | 0 | — | 0.4 | 1.6 | 2.4 | 1 | 0 | 0 | 0 |
+|+ הגעה | 1.6 | 1 | 1 | 1.6 | 1.6 | 2.1 | 2.4 | 1 | 0 | 0 | 1.2 |
+|+ הגעה | 2.1 | 1 | 2 | 1.6, 2.1 | 2.1 | 3.8 | 2.4 | 1 | 0 | 0.5 | 1.7 |
+|+ יציאה | 2.4 | 1 | 1 | 2.1 | 2.4 | 3.8 | 3.1 | 2 | 0.8 | 1.1 | 2.0 |
+|+ יציאה | 3.1 | 1 | 0 | — | 3.1 | 3.8 | 3.3 | 3 | 1.8 | 1.8 | 2.7 |
+|+ יציאה | 3.3 | 0 | 0 | — | 3.3 | 3.8 | ∞ | 3 | 1.8 | 1.8 | 2.9 |
+|+ הגעה | 3.8 | 1 | 0 | — | 3.8 | 4.0 | 4.9 | 4 | 1.8 | 1.8 | 2.9 |
+|+ הגעה | 4.0 | 1 | 1 | 4.0 | 4.0 | 5.6 | 4.9 | 4 | 1.8 | 1.8 | 3.1 |
+|+ יציאה | 4.9 | 1 | 0 | — | 4.9 | 5.6 | 8.6 | 5 | 2.7 | 2.7 | 4.0 |
+|+ הגעה | 5.6 | 1 | 1 | 5.6 | 5.6 | 5.8 | 8.6 | 5 | 2.7 | 2.7 | 4.7 |
+|+ הגעה | 5.8 | 1 | 2 | 5.6, 5.8 | 5.8 | 7.2 | 8.6 | 5 | 2.7 | 2.9 | 4.9 |
+|+ הגעה | 7.2 | 1 | 3 | 5.6, 5.8, 7.2 | 7.2 | 9.1 | 8.6 | 5 | 2.7 | 5.7 | 6.3 |
+|+ יציאה | 8.6 | 1 | 2 | 5.8, 7.2 | 8.6 | 9.1 | 9.2 | 6 | 5.7 | 9.9 | 7.7 |
+
+#### דוגמה — מדד בזמן: אורך התור
+@svg slides/svg/q-of-t.svg
+
+> **פונקציית מדרגות!** רק אירועים משנים את המצב!
+
+#### דוגמה — מדד בזמן: ניצולת השרת
+@svg slides/svg/b-of-t.svg
+
+> **פונקציית מדרגות!** רק אירועים משנים את המצב!
+
+#### שיטת חמשת השלבים
+![wide:מובטח](slides/l6/guaranteed.png)
+
+#### חמשת השלבים
+- שלב 1 — הבנת המודל (פישוט טקסט)
+- שלב 2 — מטרות (ארגון, פרויקט, סימולציה)
+- שלב 3 — אירועים (תרשים עיגולים)
+- שלב 4 — משתנים (מה צריך לדעת)
+- שלב 5 — תרשימי זרימה (פסאודוקוד)
+
+> צריך לדעת מהן הישויות, המשאבים, התהליכים; שימושי להבין מה זה "מצב" (מה צריך לזכור); מהם המשתנים וה"סוכמים" (נובעים מהמדדים); להבין מה האירועים ומה הקשרים ביניהם — ואז לכתוב את הקוד.
+
+#### תרשים אירועים (עיגולים)
+דרך אלגנטית להבין את האירועים: הצגה בתור גרף מכוון.
+- אירוע — קודקוד (עיגול)
+- קשת זיגזג — אירוע שמאותחל
+- קשת מכוונת מודגשת — אירוע שיוצר אירוע אחר
+
+@svg slides/svg/eg-basic.svg
+
+#### תרשים אירועים (עיגולים)
+- אירוע — קודקוד (עיגול)
+- קשת מכוונת מודגשת — אירוע שיכול ליצור אירוע, לאו דווקא מייד
+- קשת מכוונת לא מודגשת — אירוע שמייד, בוודאות, יוצר אירוע
+- קשת זיגזג — אירוע שמאותחל
+
+@svg slides/svg/eg-enter.svg
+
+> תקין, אבל פחות "יעיל"
+
+#### תרשים אירועים (עיגולים)
+- אירוע — קודקוד (עיגול)
+- קשת מכוונת מודגשת — אירוע שיכול ליצור אירוע, לאו דווקא מייד
+- קשת מכוונת לא מודגשת — אירוע שמייד, בוודאות, יוצר אירוע
+- קשת זיגזג — אירוע שמאותחל
+
+@svg slides/svg/eg-end.svg
+
+> נוח להוסיף אירוע סיום (כשזה מתאים)
+
+#### כמה דברים חשובים
+- לא לגעת בשעון
+- לדאוג שאירועים יגיעו ליומן (לא ביומן — לא קיים…)
+- לדאוג לזכור את כל מה שצריך (מה עובר לאן)
+
+####
+!! תכנות אירועים
+
+נמרוד טלמון
 
 ---
 

@@ -1802,11 +1802,11 @@ $$n = n_0 \cdot \left(\frac{h_0}{h}\right)^2$$
 e.g., if z repetitions caused some CI, then 4z repetitions give CI/2
 
 #### קירוב מספר הריצות הנדרש III
-- Compute the ½-interval:
+- מחשבים חצי רוחב:
 $$\delta(\alpha, n) = t_{n-1,\,1-\alpha/2}\,\frac{S(n)}{\sqrt n}$$
-- Compute "מצוי": for absolute, $δ$; for relative, $δ / X̄(n)$
-- Compute "רצוי": for absolute, $β$ (given); for relative, $γ' = γ / (1 + γ)$ (γ is given)
-- If "מצוי" is greater than "רצוי", use: N = n₀ · (מצוי / רצוי)²
+- מחשבים "מצוי": בדיוק מוחלט — δ; בדיוק יחסי — δ חלקי $X̄(n)$
+- מחשבים "רצוי": בדיוק מוחלט — β (נתון); בדיוק יחסי — $γ' = γ / (1 + γ)$ (γ נתון)
+- אם המצוי גדול מהרצוי: מספר הריצות הנדרש הוא $n_{0}$ כפול (מצוי חלקי רצוי) בריבוע
 
 #### המשך דוגמה
 $S(10) = 1.99$, $x̄(10) = 2.64$, $α = 0.1$ → $δ = 1.15$
@@ -1977,7 +1977,614 @@ $$\bar Y_i(w) = \begin{cases} \dfrac{\sum_{s=-w}^{w} \bar Y_{i+s}}{2w+1} & \text
 ---
 
 ## שיעור 10 — השוואה בין שתי חלופות
-מצגת: [השוואת חלופות](https://drive.google.com/file/d/1sOC69pGooGBIBf1FVGEis4jXE9D2h0Mm/view)
+
+### מצגת — השוואה בין חלופות והפחתת שונות
+
+####
+!! השוואה בין חלופות והפחתת שונות
+
+נמרוד טלמון
+
+#### שלבי העבודה
+- אחרי המטרות, המידול והתכנות: ניתוח המצב הקיים — תכנון הניסוי וניתוח התוצאות עבור המצב הקיים
+- תכנון חלופות — מה ניתן לשנות? מה כדאי לשנות? (לרוב, הסיבה העיקרית לסימולציה!) למשל: מספר מכונות, מדיניות תור, מספר יחידות במלאי ביטחון
+- חיפוש החלופה הטובה ביותר מבין הנבדקות
+- הערכת השינוי: בכמה החלופה הטובה ביותר טובה יותר מהמצב הקיים?
+
+#### דוגמה (מהונדסת)
+| | Zippy | Klunky |
+|---|---|---|
+| מודל | M/M/1, arrival rate 1 per min | M/M/2, arrival rate 1 per min |
+| שרתים | one "fast" server, mean service time 0.9 min | two "slow" servers, mean service time 1.8 min |
+| עלות | cost twice | |
+
+- **Performance measure:** $μ_{i}$ = expected average delay in queue for alternative i of the first 100 customers, with empty-and-idle initial conditions
+- **The truth:** $μ_{1} = 4.13 > 3.70 = μ_{2}$, so system 2 is "better"
+
+#### מה לא עושים
+| Experiment | $d̂_{Z}(100)$ | $d̂_{K}(100)$ | Recommendation |
+|---|---|---|---|
+| 1 | 3.80 | 4.60 | Zippy (wrong) |
+| 2 | 3.17 | 8.37 | Zippy (wrong) |
+| 3 | 3.96 | 4.18 | Zippy (wrong) |
+| 4 | 1.91 | 5.77 | Zippy (wrong) |
+| 5 | 1.71 | 2.23 | Zippy (wrong) |
+| 6 | 6.16 | 4.72 | Klunky (right) |
+| 7 | 5.67 | 1.39 | Klunky (right) |
+| ⋮ | ⋮ | ⋮ | ⋮ |
+| 98 | 8.40 | 9.39 | Zippy (wrong) |
+| 99 | 7.70 | 1.54 | Klunky (right) |
+| 100 | 4.64 | 1.17 | Klunky (right) |
+
+- P(pick system 1 (wrong answer)) ≈ 0.52; difficulty: randomness in output
+
+> פלטים הם משתנים מקריים! 🎲
+
+#### מה לא עושים (המשך)
+- Replicate each alternative some number (n) times
+- $X_{ij}$ = average delay from the j-th replication of alternative i
+- Base the decision on the average of the replications for alternative i
+
+| n | P(wrong answer) |
+|---|---|
+| 1 | 0.52 |
+| 5 | 0.43 |
+| 10 | 0.38 |
+| 20 | 0.34 |
+![ממוצעי n חזרות, 100 ניסויים לכל n (סימולציה)](slides/alt/dotplot.svg)
+
+#### השוואה בין חלופות
+- השוואה בין שתי חלופות — מבחן השערות
+  - מבחן t מזווג
+  - מבחן Welch לשתי סדרות בלתי תלויות
+- הפחתת שונות
+- השוואה בין מספר חלופות
+  - השוואה לסטנדרט
+  - השוואה בזוגות
+  - רגרסיה לינארית עם משתנה מסביר קטגוריאלי
+- דירוג ובחירה (ranking and selection)
+
+#### מבחן t מזווג
+נתונות שתי סדרות של תוצאות של ריצות סימולציה: $x_{1,j}$, $j = 1…n_{1}$; $x_{2,j}$, $j = 1…n_{2}$
+- $n_{1} = n_{2} = n$ — אורך הסדרות שווה (אותו מספר ריצות)
+- יש מתאם בין ריצות מקבילות בשתי הסדרות
+- אין מתאם בין ריצות בכל חלופה בפני עצמה
+- ניתן להניח שוויון שונויות בין הסדרות
+- התוצאות מתפלגות נורמלית
+
+> נגדיר מדד הפרש ונבחן רווח סמך עבור התוחלת שלו. הסדרות שונות אם רווח הסמך אינו כולל את האפס.
+
+#### מבחן t מזווג
+$$Z_j = X_{1,j} - X_{2,j} \qquad (j = 1, \dots, n)$$
+$$\bar Z(n) = \frac{\sum_{j=1}^{n} Z_j}{n} \qquad S_Z^2(n) = \frac{\sum_{j=1}^{n} \left(Z_j - \bar Z(n)\right)^2}{n-1}$$
+$$\bar Z(n) \pm t_{n-1,\,1-\alpha/2}\,\frac{S_Z(n)}{\sqrt n}$$
+
+#### דוגמה (t מזווג)
+- שני מודלים של ארגון רצפת הייצור במפעל
+- מדד: עלות ייצור חודשית ממוצעת
+- יש מתאם בין ריצות מקבילות בחלופות השונות
+- מובהקות: $α = 0.1$
+
+| j | $X_{1j}$ | $X_{2j}$ | $Z_{j}$ |
+|---|---|---|---|
+| 1 | 115.45 | 106.69 | 8.76 |
+| 2 | 121.56 | 117.47 | 4.09 |
+| 3 | 123.43 | 119.2 | 4.23 |
+| 4 | 127.59 | 127.61 | −0.02 |
+| 5 | 128.45 | 120.62 | 7.83 |
+
+$$\bar Z(5) = 4.978 \qquad S(5) = 3.4916 \qquad t_{4,\,0.95} = 2.132$$
+> ברמת ביטחון של 90% התקבל רווח סמך [1.65, 8.31] — **לא מכיל 0**. כלומר, חלופה 2 טובה יותר מחלופה 1, וזולה ממנה ב-1.65 עד 8.31.
+
+#### Welch — Modified Two-Sample-t Confidence Interval
+נתונות שתי סדרות של תוצאות של ריצות סימולציה: $x_{1,j}$, $j = 1…n_{1}$; $x_{2,j}$, $j = 1…n_{2}$
+- אין מתאם בין ריצות מקבילות בשתי הסדרות
+- אין מתאם בין ריצות בכל חלופה בפני עצמה
+- לא ניתן להניח שוויון שונויות בין הסדרות
+- התוצאות מתפלגות נורמלית
+- לא חייבים לדרוש $n_{1} = n_{2}$
+
+> נחשב רווח סמך להפרש בין תוחלות הסדרות. הסדרות שונות אם רווח הסמך אינו כולל את האפס.
+
+#### Welch — Modified Two-Sample-t Confidence Interval
+ממוצע ושונות לכל סדרה, עבור $i = 1, 2$:
+$$\bar X_i(n_i) = \frac{\sum_{j=1}^{n_i} X_{ij}}{n_i} \qquad S_i^2(n_i) = \frac{\sum_{j=1}^{n_i} \left[X_{ij} - \bar X_i(n_i)\right]^2}{n_i - 1}$$
+רווח סמך:
+$$\bar X_1(n_1) - \bar X_2(n_2) \pm t_{\hat f,\,1-\alpha/2} \sqrt{\frac{S_1^2(n_1)}{n_1} + \frac{S_2^2(n_2)}{n_2}}$$
+עם מספר דרגות חופש משוערך (Welch, 1938):
+$$\hat f = \frac{\left[S_1^2(n_1)/n_1 + S_2^2(n_2)/n_2\right]^2}{\left[S_1^2(n_1)/n_1\right]^2/(n_1-1) + \left[S_2^2(n_2)/n_2\right]^2/(n_2-1)}$$
+This is an old problem: comparing two systems with unequal and unknown variances, called the *Behrens–Fisher problem*.
+
+#### דוגמה (Welch)
+- שתי חלופות לניהול מלאי במדיניות (s,S): חלופה 1 (20,40), וחלופה 2 (20,80)
+- מדד: עלות חודשית ממוצעת
+- אין מתאם/תלות בין כל הריצות
+- מובהקות: $α = 0.1$
+
+| j | $X_{1j}$ | $X_{2j}$ |
+|---|---|---|
+| 1 | 126.97 | 118.21 |
+| 2 | 124.31 | 120.22 |
+| 3 | 126.68 | 122.45 |
+| 4 | 122.66 | 122.68 |
+| 5 | 127.23 | 119.40 |
+
+$$\bar x_1(5) = 125.57,\ \bar x_2(5) = 120.59 \qquad S_1^2(5) = 4.25,\ S_2^2(5) = 4.5$$
+$$\hat f = 7.99 \qquad t_{7.99,\,0.95} \approx t_{8,\,0.95} = 1.860$$
+> ברמת ביטחון של 90% מתקבל רווח סמך [2.66, 7.40]. כלומר, חלופה 2 טובה יותר מחלופה 1, וזולה ממנה ב-2.66 עד 7.40.
+
+#### סיכום — t מזווג ו-Welch
+שתי שיטות להשוואה בין 2 חלופות:
+
+| t מזווג | Welch |
+|---|---|
+| **חייב** אותו מספר הרצות בשתי החלופות | חי בשלום עם מספר הרצות שונה בכל חלופה |
+| מניח שאין מתאם בין ריצות של כל חלופה | מניח שאין מתאם בין ריצות של כל חלופה |
+| מעדיף מתאם בין ריצות מקבילות בשתי החלופות | **חייב** שלא יהיה מתאם בין ריצות מקבילות |
+| נכון כשהכול נורמלי | נכון כשהכול נורמלי |
+
+#### שיטות להפחתת שונות (VRT)
+$$\bar X(n) \pm t_{n-1,\,1-\alpha/2}\,\frac{S(n)}{\sqrt n}$$
+- $S(n)$ — **נוריד את זה!**
+- $\sqrt n$ — אפשר עוד הרצות, אבל זה לוקח זמן…
+- $t$ — לא רוצים להתפשר…
+
+> זה עושה בעיות!
+
+- CRN — common random numbers
+- Antithetic variables
+- Control variables
+- Importance sampling
+- Stratified sampling
+
+#### Common Random Numbers
+- נשתמש בשיטה זו כדי להפחית שונות בעת השוואה בין חלופות (x, y)
+- אנו אומדים את השונות של ההפרש בין החלופות:
+$$\mathrm{Var}(x - y) = \mathrm{Var}(x) + \mathrm{Var}(y) - 2\,\mathrm{Cov}(x, y)$$
+- המטרה היא ליצור מתאם חיובי בין החלופות: $Cov(x_{i}, y_{i}) > 0$
+- יצירת מתאם על ידי מתן זרמי מספרים אקראיים זהים לחלופות השונות בהרצות מקבילות (בעזרת שימוש חוזר ב-seeds)
+
+> Welch לא יעבוד
+
+#### כללי בטיחות אש! 🔥
+- נרצה שבהתאם לאקראיות, באמת נקבל מתאם בתוצאה
+- לפעמים יש אש וזה הפוך…
+![תגובת המודלים ל-U: למעלה CRN עובד, למטה CRN מזיק](slides/alt/crn-fire.svg)
+
+#### CRN
+![wide:חזרות בלתי תלויות מול CRN (סימולציה של Zippy ו-Klunky)](slides/alt/crn-series.svg)
+
+#### תרשים קורלציה
+![wide:Zippy מול Klunky: בלתי תלוי מול CRN (סימולציה)](slides/alt/crn-scatter.svg)
+
+#### חזרות לעומת CRN
+- בקירוב: להקטין בחצי עולה כפול 4
+- הגענו (די בקלות) מחצי רוחב 0.7 לחצי רוחב 0.04
+  - שזה אומר בערך $0.7 / 2 / 2 / 2 / 2 = 0.04$
+- צריך פי 256 יותר חזרות, בערך, כדי לקבל רווח סמך דומה
+
+#### המשך דוגמת Zippy מול Klunky
+> CRN לפעמים לא עובד יפה עם קבלה–דחייה, כי מספר הקריאות ל-$U(0,1)$ הוא משתנה מקרי — אבל עובד יפה עם טרנספורם הופכי!
+
+#### מועד א' 2013
+במפעל לייצור בקבוקי זכוכית בוחנים את מקסימום חול הזכוכית שנפל בעת הניפוח. ביצעו 15 ריצות לכל אחת מהאפשרויות, והשתמשו בהפרדת זרמים לביצוע CRN. התקבלו התוצאות הבאות:
+
+| | חלופה 1 [מיליגרם] | חלופה 2 [מיליגרם] | הפרש (1 פחות 2) [מיליגרם] |
+|---|---|---|---|
+| 1 | 15.67 | 13.07 | 2.60 |
+| 2 | 16.80 | 17.75 | −0.96 |
+| 3 | 17.14 | 15.05 | 2.09 |
+| 4 | 17.51 | 14.54 | 2.97 |
+| 5 | 16.71 | 17.65 | −0.94 |
+| 6 | 18.49 | 19.33 | −0.84 |
+| 7 | 19.86 | 19.04 | 0.82 |
+| 8 | 13.87 | 13.83 | 0.04 |
+| 9 | 20.93 | 19.83 | 1.09 |
+| 10 | 10.85 | 10.50 | 0.34 |
+| 11 | 16.60 | 15.88 | 0.73 |
+| 12 | 12.96 | 10.48 | 2.48 |
+| 13 | 17.52 | 14.93 | 2.59 |
+| 14 | 12.66 | 10.15 | 2.51 |
+| 15 | 17.91 | 18.10 | −0.20 |
+| **ממוצע** | 16.36 | 15.34 | 1.02 |
+| **s** | 2.75 | 3.29 | 1.43 |
+
+#### מועד א' 2013 — שאלות
+- באילו מן השיטות שלמדנו להשוואה בין חלופות ניתן להשתמש עבור ניסוי זה? הסבירו ובצעו את הבדיקות הדרושות. (12 נקודות)
+- קבעו ברמת מובהקות של $α = 0.05$ מהי האפשרות הטובה יותר מבין השתיים. (11 נקודות)
+- המנהל רוצה לדעת בדיוק של 3% עד כמה החלופה האחת טובה מן השנייה. תנו תשובה או קבעו מה יש לעשות. (12 נקודות)
+
+#### מועד א' 2013 — פתרון
+- באילו מן השיטות שלמדנו ניתן להשתמש?
++ יש מתאם, אז t מזווג. צריך לבדוק נורמליות.
+- קבעו ברמת מובהקות של $α = 0.05$ מהי האפשרות הטובה יותר:
++ $1.02 ± t_{14,0.975} · 1.43 / √15 = [0.23, 1.81]$ — לא מכיל אפס
+- המנהל רוצה לדעת בדיוק של 3% עד כמה החלופה האחת טובה מן השנייה:
++ אפשר עוד הרצות; אפשר אולי לשפר את ה-CRN; אולי אפשר היה בלי CRN ולעשות Welch
+
+#### השוואה בין יותר משתי חלופות
+נתונות k חלופות, ורוצים להשוות ביניהן:
+- השוואה לסטנדרט
+- השוואה בזוגות
+- דירוג ובחירה
+
+#### השוואה לסטנדרט
+- מערכת אחת מוגדרת כסטנדרט (לרוב — המצב הקיים)
+- כל שאר המערכות מושוות אליה (בעזרת המבחנים להשוואה בין שתי חלופות)
+- עבור k מערכות, כמה השוואות יש?
++ עבור k מערכות יש $k − 1$ השוואות; לכן כל השוואה תבוצע עם $α_{i} = α_{T} / (k − 1)$
++ **חשוב!** לא ניתן להסיק מי המערכת הטובה ביותר
+
+#### השוואה לסטנדרט — דוגמה
+- בחינת מדיניות מלאי (s,S)
+- מדד: עלות חודשית ממוצעת
+- השוואה של ארבע חלופות למצב הקיים (חמישה מודלים)
+- חמש חזרות על כל חלופה; אין תלות בין הריצות של החלופות השונות
+
+| Policy (i) | s | S | |
+|---|---|---|---|
+| 1 | 20 | 40 | מצב קיים |
+| 2 | 20 | 80 | |
+| 3 | 40 | 60 | |
+| 4 | 40 | 100 | |
+| 5 | 60 | 100 | |
+
+#### תוצאות
+| j | $X_{1j}$ | $X_{2j}$ | $X_{3j}$ | $X_{4j}$ | $X_{5j}$ |
+|---|---|---|---|---|---|
+| 1 | 126.97 | 118.21 | 120.77 | 131.64 | 141.09 |
+| 2 | 124.31 | 120.22 | 129.32 | 137.07 | 143.86 |
+| 3 | 126.68 | 122.45 | 120.61 | 129.91 | 144.30 |
+| 4 | 122.66 | 122.68 | 123.65 | 129.97 | 141.72 |
+| 5 | 127.23 | 119.40 | 127.34 | 131.08 | 142.61 |
+| **Mean** | 125.57 | 120.59 | 124.34 | 131.93 | 142.72 |
+| **Std. dev.** | 2.00 | 1.94 | 3.90 | 2.96 | 1.37 |
+
+**Welch** — $α_{T} = 0.1$, $c = k − 1 = 4$, $α_{i} = 0.1 / 4 = 0.025$:
+
+| i | $X̄_{i} − X̄_{1}$ | Half-length | Interval |
+|---|---|---|---|
+| 2 | −4.98 | 3.54 | (−8.52, −1.44)* |
+| 3 | −1.23 | 6.21 | (−7.44, 4.97) |
+| 4 | 6.36 | 4.55 | (1.82, 10.91)* |
+| 5 | 17.15 | 6.15 | (14.07, 20.22)* |
+
+#### All Pairwise Comparisons
+Want confidence intervals on $μ_{i1} − μ_{i2}$ for all $i_{1}$ and $i_{2}$ between 1 and k, with $i_{1} < i_{2}$:
+$$\begin{array}{cccc} \mu_2 - \mu_1 & \mu_3 - \mu_1 & \cdots & \mu_k - \mu_1 \\ & \mu_3 - \mu_2 & \cdots & \mu_k - \mu_2 \\ & & \ddots & \vdots \\ & & & \mu_k - \mu_{k-1} \end{array}$$
+> על כמה רווחי סמך צריך לחתום?
++ Number of confidence intervals is $c = k(k − 1) / 2$ (k choose 2)
+
+#### תוצאות
+**Welch** — $α_{T} = 0.1$, $c = k(k − 1)/2 = 10$, $α_{i} = 0.1 / 10 = 0.01$ ($P_{i} = 99%$):
+
+| $i_{1}$ \ $i_{2}$ | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|
+| 1 | −4.98 ± 4.36* | −1.23 ± 7.91 | 6.36 ± 5.60* | 17.15 ± 3.80* |
+| 2 | | 3.75 ± 7.86 | 11.34 ± 5.88* | 22.12 ± 3.72* |
+| 3 | | | 7.60 ± 7.67 | 18.38 ± 8.51* |
+| 4 | | | | 10.78 ± 5.89* |
+
+#### דירוג ובחירה
+- Selecting the best of k systems
+- Selecting a subset of size m containing the best of k systems
+- Selecting the m best of k systems
+
+> All runs independent (always) (no CRN please!); normal output distribution (always)
+
+#### Ranking and Selection — Selecting the Best of k Systems
+- Want to select one of the k alternatives as the best (assume smaller is better)
+- Realize we can't be sure that the selected system is the one with the smallest $μ_{i}$ (why? … randomness!)
+- Specify a correct-selection probability $P^{*}$ (e.g., 0.90 or 0.95)
+- Specify an indifference zone $d^{*}$
+  - If the best mean and the next-best mean differ by more than $d^{*}$, we really do want to select the best one
+  - We don't care if the selected system is not the one with the smallest mean, but has a mean that is no worse than $d^{*}$ compared to the best
+
+#### דוגמה (רווח חודשי באלפי $)
+| חלופות | רווח משוערך 1 | רווח משוערך 2 | רווח אמיתי |
+|---|---|---|---|
+| 1 | 10 | 8 | 9 |
+| 2 | 7 | 5 | 8.1 |
+| 3 | 5 | 3 | 4 |
+| 4 | 2 | 7 | 6 |
+| 5 | 4 | 6 | 3 |
+
+- עבור $d^{*} = 1$: אדישים בין 1 לבין 2
+- $d^{*}$ קטן יותר ← דיוק גדול יותר ← יותר ריצות
+- $P^{*}$ גדול יותר ← ודאות גבוהה יותר ← יותר ריצות
+
+#### Ranking and Selection — Selecting the Best of k Systems
+Procedure (two-stage sampling):
+- 1. Define $P^{*}$, $d^{*}$ (probability of success; approximation)
+- 2. Get $n_{0}$ observations from each system (say, at least 20)
+- 3. Compute the sample means $X̄_{i}^{(1)}$ and sample variances $S_{i}^{2}$ for each system i separately
+- 4. Compute the final sample size $N_{i}$ from each system i as:
+$$N_i = \max\left\{ n_0 + 1,\ \left\lceil \frac{h_1^2 S_i^2}{(d^*)^2} \right\rceil \right\}$$
+- 5. Make $N_{i} − n_{0}$ more observations on each system
+- 6. Compute the second-stage means $X̄_{i}^{(2)}$
+
+#### Ranking and Selection — Selecting the Best of k Systems
+- 7. Compute weights:
+$$W_{i1} = \frac{n_0}{N_i}\left[1 + \sqrt{1 - \frac{N_i}{n_0}\left(1 - \frac{(N_i - n_0)(d^*)^2}{h_1^2 S_i^2}\right)}\right], \qquad W_{i2} = 1 - W_{i1}$$
+- 8. Compute weighted sample means:
+$$\tilde X_i(N_i) = W_{i1} \bar X_i^{(1)} + W_{i2} \bar X_i^{(2)}$$
+- 9. Pick the system with the smallest/highest $X̃_{i}(N_{i})$
+
+#### Example — Selecting the Best of k Systems
+- k = 5 inventory models, simulated independently across alternatives
+- **Output = expected average total cost per month, so smaller is better**
+- Set $P^{*} = 0.90$, $d^{*} = 1$; $n_{0} = 20$ initial replications of each system
+- From the table, $h_{1} = 2.747$
+
+| i | $X̄_{i}^{(1)}(20)$ | $S_{i}^{2}(20)$ | $N_{i}$ | $X̄_{i}^{(2)}(N_{i} − 20)$ | $W_{i1}$ | $W_{i2}$ | $X̃_{i}(N_{i})$ |
+|---|---|---|---|---|---|---|---|
+| 1 | 126.48 | 14.52 | **110** | 124.45 | 0.21 | 0.79 | 124.87 |
+| 2 | 121.92 | 7.96 | **61** | 121.63 | 0.39 | 0.61 | **121.74** |
+| 3 | 127.16 | 9.45 | **72** | 126.11 | 0.32 | 0.68 | 126.44 |
+| 4 | 130.71 | 8.25 | **63** | 132.03 | 0.37 | 0.63 | 131.54 |
+| 5 | 144.07 | 6.20 | **47** | 144.83 | 0.46 | 0.54 | 144.48 |
+
+> **Conclude that configuration 2 is the best (smallest mean).** Note that the sample sizes required are very big.
+
+#### Selecting a Subset of Size m Containing the Best of k Systems
+- Select a subset (unordered) of specified size m (< k) that contains the best system
+- **Initial screening of "obviously" inferior alternatives**
+- Use a similar indifference-zone idea:
+  - If the difference between the best and second-best system is at least $d^{*}$, we want a procedure such that with probability at least $P^{*}$, the selected subset will contain a system with the best response
+  - If the difference between the best and second-best system is less than $d^{*}$, then with probability at least $P^{*}$, the selected subset will contain a system that is no worse than $d^{*}$ compared to the best system
+
+#### דוגמה: $d^{*} = 1$, m = 2, k = 6 (רווח חודשי)
+| חלופה | ערך אמיתי |
+|---|---|
+| 1 | 8 |
+| 2 | 7.1 |
+| 3 | 5 |
+| 4 | 1 |
+| 5 | 7.5 |
+| 6 | 6.6 |
+
+המדד שלנו הוא רווח חודשי. **אילו חלופות ייבחרו?**
++ תיבחר קבוצה של 2 חלופות, כאשר לפחות אחת מבין חלופות 1, 2, 5 ביניהן.
+
+#### Selecting a Subset of Size m Containing the Best of k Systems
+Uses similar two-stage sampling:
+- 1. Define $P^{*}$, $d^{*} > 0$
+- 2. Take a first stage of $n_{0}$ independent replications; compute sample means $X̄_{i}^{(1)}(n_{0})$ and sample variances $S_{i}^{2}(n_{0})$
+- 3. **Compute the final required sample sizes $N_{i}$ from each system by a formula similar to the one used earlier, except use $h_{2}$ (a different table) rather than $h_{1}$**
+- 4. Make the required additional replications; compute second-stage sample means $X̄_{i}^{(2)}(N_{i} − n_{0})$, weights for the two stages $(W_{i1}, W_{i2})$, and final weighted sample means $X̃_{i}(N_{i})$
+- 5. Select the systems with the m best (smallest or largest) values of the final weighted sample means $X̃_{i}(N_{i})$
+
+#### Example — Subset of Size m Containing the Best of k Systems
+- Example with the five inventory systems ($k = 5$, $m = 3$, $P^{*} = 0.90$, $d^{*} = 1$, $n_{0} = 20$)
+- From the table, $h_{2} = 1.243$ (smaller than the earlier $h_{1} = 2.747$); results:
+
+| i | $X̄_{i}^{(1)}(20)$ | $S_{i}^{2}(20)$ | $N_{i}$ | $X̄_{i}^{(2)}(N_{i} − 20)$ | $W_{i1}$ | $W_{i2}$ | $X̃_{i}(N_{i})$ |
+|---|---|---|---|---|---|---|---|
+| 1 | 124.71 | 17.16 | **27** | 125.64 | 0.80 | 0.20 | **124.89** |
+| 2 | 121.20 | 12.64 | **21** | 125.69 | 1.01 | −0.01 | **121.15** |
+| 3 | 125.57 | 9.07 | **21** | 123.51 | 1.10 | −0.10 | **125.78** |
+| 4 | 132.39 | 6.22 | **21** | 133.37 | 1.18 | −0.18 | 132.21 |
+| 5 | 144.27 | 4.23 | **21** | 143.67 | 1.27 | −0.27 | 144.43 |
+
+> **Selected subset consists of configurations 1, 2, and 3 (unordered).** Note that the sample sizes required are smaller for this more modest goal.
+
+#### Selecting the m Best of k Systems
+- Select a subset (unordered) of specified size m (< k) with the m best configurations
+- Use a similar indifference-zone idea:
+  - If the difference between the m-th best and the (m + 1)-st best system is at least $d^{*}$, we want a procedure such that with probability at least $P^{*}$, the means of the selected subset are equal to the means of the m best configurations
+  - If the difference between the m-th best and the (m + 1)-st best system is less than $d^{*}$, then with probability at least $P^{*}$, the mean of each configuration in the selected subset will be no worse than $d^{*}$ compared to the m-th best system
+
+#### דוגמה: $d^{*} = 1$, m = 2, k = 6 (רווח חודשי)
+| חלופה | ערך אמיתי |
+|---|---|
+| 1 | 8 |
+| 2 | 7.1 |
+| 3 | 5 |
+| 4 | 1 |
+| 5 | 7.5 |
+| 6 | 6.6 |
+
+המדד שלנו הוא רווח. **אילו חלופות ייבחרו?**
++ ייבחרו 2 מתוך: 1, 2, 5, 6
+
+#### Selecting the m Best of k Systems
+Uses similar two-stage sampling:
+- 1. Define $P^{*} > m/k$, $d^{*} > 0$
+- 2. Take a first stage of $n_{0}$ independent replications; compute sample means $X̄_{i}^{(1)}(n_{0})$ and sample variances $S_{i}^{2}(n_{0})$
+- 3. **Compute the final required sample sizes $N_{i}$ from each system by a formula similar to the one used earlier, except use $h_{3}$ (table) rather than $h_{1}$ or $h_{2}$**
+- 4. Make the required additional replications; compute second-stage sample means $X̄_{i}^{(2)}(N_{i} − n_{0})$, weights for the two stages $(W_{i1}, W_{i2})$, and final weighted sample means $X̃_{i}(N_{i})$
+- 5. Select the systems with the m best (smallest or largest) values of the final weighted sample means $X̃_{i}(N_{i})$
+
+#### Example — Selecting the m Best of k Systems
+- Example with the five inventory systems ($k = 5$, $m = 3$, $P^{*} = 0.90$, $d^{*} = 1$, $n_{0} = 20$)
+- From the table, $h_{3} = 3.016$ (larger than the earlier $h_{1} = 2.747$); results:
+
+| i | $X̄_{i}^{(1)}(20)$ | $S_{i}^{2}(20)$ | $N_{i}$ | $X̄_{i}^{(2)}(N_{i} − 20)$ | $W_{i1}$ | $W_{i2}$ | $X̃_{i}(N_{i})$ |
+|---|---|---|---|---|---|---|---|
+| 1 | 123.67 | 11.50 | **105** | 124.86 | 0.21 | 0.79 | **124.60** |
+| 2 | 120.62 | 8.80 | **81** | 121.75 | 0.29 | 0.71 | **121.42** |
+| 3 | 125.24 | 7.16 | **66** | 125.13 | 0.36 | 0.64 | **125.17** |
+| 4 | 132.05 | 6.18 | **57** | 131.26 | 0.41 | 0.59 | 131.58 |
+| 5 | 144.82 | 3.27 | **30** | 144.24 | 0.71 | 0.29 | 144.65 |
+
+> **Selected subset consists of configurations 1, 2, and 3 (unordered).** Note that the sample sizes required are the largest.
+
+#### ערכי $h_{1}$
+
+| $P^{*}$ | $n_{0}$ | k=2 | k=3 | k=4 | k=5 | k=6 | k=7 | k=8 | k=9 | k=10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0.90 | 20 | 1.896 | 2.342 | 2.583 | 2.747 | 2.870 | 2.969 | 3.051 | 3.121 | 3.182 |
+| 0.90 | 40 | 1.852 | 2.283 | 2.514 | 2.669 | 2.785 | 2.878 | 2.954 | 3.019 | 3.076 |
+| 0.95 | 20 | 2.453 | 2.872 | 3.101 | 3.258 | 3.377 | 3.472 | 3.551 | 3.619 | 3.679 |
+| 0.95 | 40 | 2.386 | 2.786 | 3.003 | 3.150 | 3.260 | 3.349 | 3.422 | 3.484 | 3.539 |
+
+#### ערכי $h_{2}$ ($P^{*}$ = 0.90, $n_{0}$ = 20)
+
+עבור m = 1 משתמשים בטבלת $h_{1}$.
+
+| m | k=3 | k=4 | k=5 | k=6 | k=7 | k=8 | k=9 | k=10 |
+|---|---|---|---|---|---|---|---|---|
+| **2** | 1.137 | 1.601 | 1.860 | 2.039 | 2.174 | 2.282 | 2.373 | 2.450 |
+| **3** |  | 0.782 | 1.243 | 1.507 | 1.690 | 1.830 | 1.943 | 2.038 |
+| **4** |  |  | 0.556 | 1.012 | 1.276 | 1.461 | 1.603 | 1.718 |
+| **5** |  |  |  | 0.392 | 0.843 | 1.105 | 1.291 | 1.434 |
+| **6** |  |  |  |  | 0.265 | 0.711 | 0.971 | 1.156 |
+| **7** |  |  |  |  |  | 0.162 | 0.603 | 0.861 |
+| **8** |  |  |  |  |  |  | 0.075 | 0.512 |
+| **9** |  |  |  |  |  |  |  | † |
+
+† בבעיית בחירה זו חייבים $P^{*} > m/k$.
+
+#### ערכי $h_{2}$ ($P^{*}$ = 0.90, $n_{0}$ = 40)
+
+עבור m = 1 משתמשים בטבלת $h_{1}$.
+
+| m | k=3 | k=4 | k=5 | k=6 | k=7 | k=8 | k=9 | k=10 |
+|---|---|---|---|---|---|---|---|---|
+| **2** | 1.114 | 1.570 | 1.825 | 1.999 | 2.131 | 2.237 | 2.324 | 2.399 |
+| **3** |  | 0.763 | 1.219 | 1.479 | 1.660 | 1.798 | 1.909 | 2.002 |
+| **4** |  |  | 0.541 | 0.991 | 1.251 | 1.434 | 1.575 | 1.688 |
+| **5** |  |  |  | 0.381 | 0.824 | 1.083 | 1.266 | 1.408 |
+| **6** |  |  |  |  | 0.257 | 0.693 | 0.950 | 1.133 |
+| **7** |  |  |  |  |  | 0.156 | 0.587 | 0.841 |
+| **8** |  |  |  |  |  |  | 0.072 | 0.497 |
+| **9** |  |  |  |  |  |  |  | † |
+
+† בבעיית בחירה זו חייבים $P^{*} > m/k$.
+
+#### ערכי $h_{2}$ ($P^{*}$ = 0.95, $n_{0}$ = 20)
+
+עבור m = 1 משתמשים בטבלת $h_{1}$.
+
+| m | k=3 | k=4 | k=5 | k=6 | k=7 | k=8 | k=9 | k=10 |
+|---|---|---|---|---|---|---|---|---|
+| **2** | 1.631 | 2.071 | 2.321 | 2.494 | 2.625 | 2.731 | 2.819 | 2.894 |
+| **3** |  | 1.256 | 1.697 | 1.952 | 2.131 | 2.267 | 2.378 | 2.470 |
+| **4** |  |  | 1.021 | 1.458 | 1.714 | 1.894 | 2.033 | 2.146 |
+| **5** |  |  |  | 0.852 | 1.284 | 1.539 | 1.720 | 1.860 |
+| **6** |  |  |  |  | 0.721 | 1.149 | 1.402 | 1.583 |
+| **7** |  |  |  |  |  | 0.615 | 1.038 | 1.290 |
+| **8** |  |  |  |  |  |  | 0.526 | 0.945 |
+| **9** |  |  |  |  |  |  |  | 0.449 |
+
+#### ערכי $h_{2}$ ($P^{*}$ = 0.95, $n_{0}$ = 40)
+
+עבור m = 1 משתמשים בטבלת $h_{1}$.
+
+| m | k=3 | k=4 | k=5 | k=6 | k=7 | k=8 | k=9 | k=10 |
+|---|---|---|---|---|---|---|---|---|
+| **2** | 1.591 | 2.023 | 2.267 | 2.435 | 2.563 | 2.665 | 2.750 | 2.823 |
+| **3** |  | 1.222 | 1.656 | 1.907 | 2.082 | 2.217 | 2.325 | 2.415 |
+| **4** |  |  | 0.990 | 1.420 | 1.672 | 1.850 | 1.987 | 2.098 |
+| **5** |  |  |  | 0.824 | 1.248 | 1.499 | 1.678 | 1.816 |
+| **6** |  |  |  |  | 0.695 | 1.114 | 1.363 | 1.541 |
+| **7** |  |  |  |  |  | 0.591 | 1.004 | 1.252 |
+| **8** |  |  |  |  |  |  | 0.505 | 0.913 |
+| **9** |  |  |  |  |  |  |  | 0.430 |
+
+#### ערכי $h_{3}$ ($P^{*}$ = 0.90, $n_{0}$ = 20)
+
+עבור m = 1 משתמשים בטבלת $h_{1}$.
+
+| m | k=3 | k=4 | k=5 | k=6 | k=7 | k=8 | k=9 | k=10 |
+|---|---|---|---|---|---|---|---|---|
+| **2** | 2.342 | 2.779 | 3.016 | 3.177 | 3.299 | 3.396 | 3.477 | 3.546 |
+| **3** |  | 2.583 | 3.016 | 3.251 | 3.411 | 3.532 | 3.629 | 3.709 |
+| **4** |  |  | 2.747 | 3.177 | 3.411 | 3.571 | 3.691 | 3.787 |
+| **5** |  |  |  | 2.870 | 3.299 | 3.532 | 3.691 | 3.811 |
+| **6** |  |  |  |  | 2.969 | 3.396 | 3.629 | 3.787 |
+| **7** |  |  |  |  |  | 3.051 | 3.477 | 3.709 |
+| **8** |  |  |  |  |  |  | 3.121 | 3.546 |
+| **9** |  |  |  |  |  |  |  | 3.182 |
+
+#### ערכי $h_{3}$ ($P^{*}$ = 0.90, $n_{0}$ = 40)
+
+עבור m = 1 משתמשים בטבלת $h_{1}$.
+
+| m | k=3 | k=4 | k=5 | k=6 | k=7 | k=8 | k=9 | k=10 |
+|---|---|---|---|---|---|---|---|---|
+| **2** | 2.283 | 2.703 | 2.928 | 3.081 | 3.195 | 3.285 | 3.360 | 3.424 |
+| **3** |  | 2.514 | 2.928 | 3.151 | 3.302 | 3.415 | 3.505 | 3.579 |
+| **4** |  |  | 2.669 | 3.081 | 3.302 | 3.451 | 3.564 | 3.653 |
+| **5** |  |  |  | 2.785 | 3.195 | 3.415 | 3.564 | 3.675 |
+| **6** |  |  |  |  | 2.878 | 3.285 | 3.505 | 3.653 |
+| **7** |  |  |  |  |  | 2.954 | 3.360 | 3.579 |
+| **8** |  |  |  |  |  |  | 3.019 | 3.424 |
+| **9** |  |  |  |  |  |  |  | 3.076 |
+
+#### ערכי $h_{3}$ ($P^{*}$ = 0.95, $n_{0}$ = 20)
+
+עבור m = 1 משתמשים בטבלת $h_{1}$.
+
+| m | k=3 | k=4 | k=5 | k=6 | k=7 | k=8 | k=9 | k=10 |
+|---|---|---|---|---|---|---|---|---|
+| **2** | 2.872 | 3.282 | 3.507 | 3.662 | 3.779 | 3.873 | 3.952 | 4.019 |
+| **3** |  | 3.101 | 3.507 | 3.731 | 3.885 | 4.001 | 4.094 | 4.172 |
+| **4** |  |  | 3.258 | 3.662 | 3.885 | 4.037 | 4.153 | 4.246 |
+| **5** |  |  |  | 3.377 | 3.779 | 4.001 | 4.153 | 4.269 |
+| **6** |  |  |  |  | 3.472 | 3.873 | 4.094 | 4.246 |
+| **7** |  |  |  |  |  | 3.551 | 3.952 | 4.172 |
+| **8** |  |  |  |  |  |  | 3.619 | 4.019 |
+| **9** |  |  |  |  |  |  |  | 3.679 |
+
+#### ערכי $h_{3}$ ($P^{*}$ = 0.95, $n_{0}$ = 40)
+
+עבור m = 1 משתמשים בטבלת $h_{1}$.
+
+| m | k=3 | k=4 | k=5 | k=6 | k=7 | k=8 | k=9 | k=10 |
+|---|---|---|---|---|---|---|---|---|
+| **2** | 2.786 | 3.175 | 3.386 | 3.530 | 3.639 | 3.725 | 3.797 | 3.858 |
+| **3** |  | 3.003 | 3.386 | 3.595 | 3.738 | 3.845 | 3.931 | 4.002 |
+| **4** |  |  | 3.150 | 3.530 | 3.738 | 3.879 | 3.986 | 4.071 |
+| **5** |  |  |  | 3.260 | 3.639 | 3.845 | 3.986 | 4.092 |
+| **6** |  |  |  |  | 3.349 | 3.725 | 3.931 | 4.071 |
+| **7** |  |  |  |  |  | 3.422 | 3.797 | 4.002 |
+| **8** |  |  |  |  |  |  | 3.484 | 3.858 |
+| **9** |  |  |  |  |  |  |  | 3.539 |
+
+#### מה עושים כשאין חלופות?
+- בכל מה שדיברנו עליו עד עכשיו היו חלופות מוגדרות
+- לפעמים אין את החלופות באופן ישיר, אבל יש משתנים
+  - יש factors עם response
+
+| System | Possible factors | Quantitative or qualitative? | Possible responses |
+|---|---|---|---|
+| Inventory system | Reorder point; order-up-to level | Quantitative; quantitative | Average cost per month; average number of items in inventory |
+| Manufacturing system | Number of machines; number of forklifts; forklift dispatching rule | Quantitative; quantitative; qualitative | Average time in system; throughput; average queue size |
+| Communications network | Nodes of nodes; number of links; routing policy | Quantitative; quantitative; qualitative | Average end-to-end delay; throughput |
+
+> אפשר לשחק גם עם uncontrollable factors!
+
+#### $2^{k}$ Factorial Designs
+- יש k פקטורים
+- אם הפקטורים לא בינאריים, נקבע שתי רמות לכל פקטור
+- נרצה לדעת כמה כל פקטור משפיע
+- נבדוק את $2^{k}$ האפשרויות:
+
+| Design point | Factor 1 | Factor 2 | Factor 3 | Response |
+|---|---|---|---|---|
+| 1 | − | − | − | $R_{1}$ |
+| 2 | + | − | − | $R_{2}$ |
+| 3 | − | + | − | $R_{3}$ |
+| 4 | + | + | − | $R_{4}$ |
+| 5 | − | − | + | $R_{5}$ |
+| 6 | + | − | + | $R_{6}$ |
+| 7 | − | + | + | $R_{7}$ |
+| 8 | + | + | + | $R_{8}$ |
+
+#### $2^{k−p}$ Factorial Designs
+- הפונקציה $2^{k}$ גדלה ממש מהר…
+- יש גם $2^{k−p}$ Factorial Design
+
+#### אפשר גם רגרסיה
+- נניח שבחרנו k פקטורים חשובים
+- נרצה לדעת איך נראה ה-response surface
+- רגרסיה היא דרך לא רעה…
+
+#### אופטימיזציה
+- אם יש כבר משטח, אפשר כבר אופטימיזציה
+![card:משטח תגובה: מקסימום גלובלי ומקומי](slides/alt/surface.png)
+![הגביע הקדוש](slides/alt/grail.jpg)
 
 ### חימום
 

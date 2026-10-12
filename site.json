@@ -14,19 +14,19 @@
   ],
   "links": [
     {
+      "title": "תרגילי כיתה",
+      "desc": "האפליקציה שנעבוד איתה בהרצאות: מצגות, חימום, שיפוט, אתגר",
+      "url": "exercises/"
+    },
+    {
       "title": "סרטוני הקורס",
       "desc": "החומר התאורטי, מחולק לפי הרצאות",
       "url": "videos.html"
     },
     {
-      "title": "תרגילי כיתה",
-      "desc": "האפליקציה שנעבוד איתה בהרצאות: חימום, שיפוט, אתגר",
-      "url": "exercises/"
-    },
-    {
       "title": "מעבדות",
       "desc": "מחברות הפייתון של התרגולים",
-      "url": "https://drive.google.com/drive/folders/1OVMwj6ZujrUZnjXKSA6wnJ8OMB98qwif?usp=sharing"
+      "url": "labs.html"
     },
     {
       "title": "אפליקציה",

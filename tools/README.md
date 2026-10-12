@@ -19,5 +19,6 @@ python3 tools/build_site.py   # -> index.html, videos.html, labs.html
 - `![alt](slides/x.jpg)` image; goes to a side column when the slide also has text. Alt prefix `wide:` keeps it in the text flow, `card:` puts it on a white card.
 - tables: `| a | b |` with a `|---|---|` header separator; rows starting `|+` are revealed by Enter
 - fenced code: ```` ``` ```` … ```` ``` ````; `code  ## note` puts a note beside the line
-- ```` ```mermaid ```` diagrams, ```` ```svg ```` inline SVG
+- ```` ```mermaid ```` diagrams, ```` ```svg ```` inline SVG, `@svg path` inlines an SVG file
+- a line `$$ LaTeX $$` is display math (KaTeX)
 - inline: `**bold**`, `*italic*`, `$math$`, `` `code` ``, `[text](url)`, `^{sup}`, `_{sub}`

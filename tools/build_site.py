@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""site.json + videos.md + labs.md (+ lesson titles from exercises.md) -> index.html, videos.html, labs.html.
+"""site.json + videos.md + labs.md + recordings.md (+ lesson titles from exercises.md)
+-> index.html, videos.html, labs.html, recordings.html (unlisted: not linked from home, noindex).
 
 Usage (from the repo root):  python3 tools/build_site.py
 """
@@ -29,11 +30,11 @@ footer a:hover{color:var(--ink)}
 """
 
 
-def page(title, css, body, site, script=''):
+def page(title, css, body, site, script='', head=''):
     foot = (f'<footer><span>{E(site["footer"])}</span><span dir="ltr"><a href="{site["home_url"]}">'
             f'{E(site["home_url"].split("//", 1)[1])}</a></span></footer>')
     return (f'<!DOCTYPE html>\n<html lang="he" dir="rtl">\n<head>\n<meta charset="utf-8">'
-            f'<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>{E(title)}</title>\n'
+            f'<meta name="viewport" content="width=device-width, initial-scale=1">{head}\n<title>{E(title)}</title>\n'
             f'<style>{BASE_CSS}\n{css}</style>\n</head><body>\n<div class="wrap">\n{body}\n{foot}\n</div>\n'
             f'{script}</body></html>')
 
@@ -215,9 +216,25 @@ def build_labs(site):
     return page(f'{site["course"]} — מעבדות', LAB_CSS, '\n'.join(out), site)
 
 
+# ---------------- recordings (unlisted) ----------------
+def build_recordings(site):
+    lines = (ROOT / 'recordings.md').read_text(encoding='utf8').split('\n')
+    out = [f'<a class="back" href="./">→ {E(site["course"])}</a>', f'<h1>{E(lines[0].lstrip("# ").strip())}</h1>']
+    for line in lines[1:]:
+        t = line.strip()
+        a = md_link(t)
+        if a:
+            out.append(f'<a class="folder" href="{E(a[1])}" target="_blank" rel="noopener">{E(a[0])} ↗</a>')
+        elif t:
+            out.append(f'<p class="intro">{E(t)}</p>')
+    return page(f'{site["course"]} — הקלטות', VID_CSS, '\n'.join(out), site,
+                head='<meta name="robots" content="noindex,nofollow">')
+
+
 def main():
     site = json.loads((ROOT / 'site.json').read_text(encoding='utf8'))
-    for name, fn in [('index.html', build_home), ('videos.html', build_videos), ('labs.html', build_labs)]:
+    for name, fn in [('index.html', build_home), ('videos.html', build_videos), ('labs.html', build_labs),
+                     ('recordings.html', build_recordings)]:
         (ROOT / name).write_text(fn(site), encoding='utf8')
         print('wrote', name)
 

@@ -497,6 +497,119 @@ function SlideBody({ lines: t, revealed: i }) {
   }
   return React.createElement("div", { className: l }, e.map(r));
 }
+// ---- timer music: a small generative lo-fi loop (WebAudio, no files, no network); new key/progression each start ----
+const Music = (() => {
+  let ctx = null, master = null, echo = null, timerId = null, next = 0, step = 0, prog = null, root = 0, mel = 0;
+  let on = true;
+  try { on = localStorage.getItem("simMusic") !== "off"; } catch {}
+  const BPM = 82, S16 = 60 / BPM / 4;
+  const PROGS = [
+    [[0, 4, 7, 11], [9, 12, 16, 19], [5, 9, 12, 16], [7, 11, 14, 17]],      // Imaj7 vi7 IVmaj7 V7
+    [[2, 5, 9, 12], [7, 11, 14, 17], [0, 4, 7, 11], [9, 12, 16, 19]],      // ii7 V7 Imaj7 vi7
+    [[5, 9, 12, 16], [4, 7, 11, 14], [9, 12, 16, 19], [0, 4, 7, 11]],      // IVmaj7 iii7 vi7 Imaj7
+    [[0, 4, 7, 11], [5, 9, 12, 16], [0, 4, 7, 11], [7, 11, 14, 17]],       // Imaj7 IVmaj7 Imaj7 V7
+  ];
+  const PENTA = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21];
+  const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+  function init() {
+    if (ctx) return;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const comp = ctx.createDynamicsCompressor();
+    master = ctx.createGain(); master.gain.value = 0;
+    master.connect(comp); comp.connect(ctx.destination);
+    echo = ctx.createDelay(); echo.delayTime.value = S16 * 3;
+    const fb = ctx.createGain(); fb.gain.value = 0.3;
+    const wet = ctx.createGain(); wet.gain.value = 0.35;
+    echo.connect(fb); fb.connect(echo); echo.connect(wet); wet.connect(master);
+  }
+  function tone(f, t, dur, { type = "sine", vol = 0.1, att = 0.01, cut = 2000, toEcho = false } = {}) {
+    const o = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter();
+    o.type = type; o.frequency.value = f; lp.frequency.value = cut;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + att);
+    g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+    o.connect(lp); lp.connect(g); g.connect(master); if (toEcho) g.connect(echo);
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+  function noise(t, dur, vol, cut) {
+    const n = Math.floor(ctx.sampleRate * dur), b = ctx.createBuffer(1, n, ctx.sampleRate), d = b.getChannelData(0);
+    for (let k = 0; k < n; k++) d[k] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource(), hp = ctx.createBiquadFilter(), g = ctx.createGain();
+    src.buffer = b; hp.type = "highpass"; hp.frequency.value = cut;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+    src.connect(hp); hp.connect(g); g.connect(master); src.start(t);
+  }
+  function kick(t) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.18);
+    g.gain.setValueAtTime(0.35, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.35);
+  }
+  function play16(i, t) {
+    const bar = Math.floor(i / 16) % 4, pos = i % 16, ch = prog[bar];
+    const swing = pos % 2 ? S16 * 0.18 : 0;
+    t += swing;
+    if (pos === 0) ch.forEach((n, k) => tone(hz(root + 48 + n), t + k * 0.012, S16 * 15, { type: "triangle", vol: 0.045, att: 0.04, cut: 1400 }));
+    if (pos === 0 || pos === 10) tone(hz(root + 36 + ch[0]), t, S16 * 5, { vol: 0.16, att: 0.02, cut: 500 });
+    if (pos === 0 || pos === 7 || pos === 10) kick(t);
+    if (pos === 4 || pos === 12) noise(t, 0.12, 0.06, 1800);
+    if (pos % 2 === 0) noise(t, 0.04, pos % 4 ? 0.012 : 0.02, 7000);
+    if (pos % 2 === 0 && Math.random() < 0.55) {                         // music-box melody: pentatonic random walk
+      mel = Math.max(0, Math.min(PENTA.length - 1, mel + [-2, -1, -1, 1, 1, 2][Math.floor(Math.random() * 6)]));
+      tone(hz(root + 72 + PENTA[mel]), t, 0.9, { type: "sine", vol: 0.06, att: 0.005, cut: 4000, toEcho: true });
+      tone(hz(root + 84 + PENTA[mel]), t, 0.25, { type: "sine", vol: 0.012, att: 0.003, cut: 6000 });
+    }
+  }
+  function tick() {
+    while (next < ctx.currentTime + 0.15) { play16(step++, next); next += S16; }
+  }
+  function start() {
+    if (!on || timerId) return;
+    try {
+      init(); ctx.resume();
+      prog = PROGS[Math.floor(Math.random() * PROGS.length)];
+      root = [0, 2, 3, 5, 7, 8, 10][Math.floor(Math.random() * 7)] - 2;
+      step = 0; mel = 4; next = ctx.currentTime + 0.08;
+      master.gain.cancelScheduledValues(ctx.currentTime);
+      master.gain.setValueAtTime(0, ctx.currentTime);
+      master.gain.linearRampToValueAtTime(1, ctx.currentTime + 1.5);
+      timerId = setInterval(tick, 25); tick();
+    } catch {}
+  }
+  function stop(fade = 0.8) {
+    if (!timerId) return;
+    clearInterval(timerId); timerId = null;
+    try {
+      const n = ctx.currentTime;
+      master.gain.cancelScheduledValues(n); master.gain.setValueAtTime(master.gain.value, n);
+      master.gain.linearRampToValueAtTime(0, n + fade);
+    } catch {}
+  }
+  return {
+    start, stop,
+    isOn: () => on,
+    toggle(running) {
+      on = !on;
+      try { localStorage.setItem("simMusic", on ? "on" : "off"); } catch {}
+      on ? running && start() : stop(0.3);
+      return on;
+    },
+  };
+})();
+// keep the screen (and so the projector) awake while the app is open
+function useWakeLock() {
+  useEffect(() => {
+    let lock = null;
+    const get = async () => {
+      try { if (document.visibilityState === "visible" && navigator.wakeLock && !lock) { lock = await navigator.wakeLock.request("screen"); lock.addEventListener("release", () => { lock = null; }); } } catch {}
+    };
+    get();
+    document.addEventListener("visibilitychange", get);
+    window.addEventListener("pointerdown", get);
+    window.addEventListener("keydown", get);
+    return () => { document.removeEventListener("visibilitychange", get); window.removeEventListener("pointerdown", get); window.removeEventListener("keydown", get); };
+  }, []);
+}
 function useTimer() {
   const [t, i] = useState(300),
     [e, l] = useState(300),
@@ -504,6 +617,7 @@ function useTimer() {
     [r, d] = useState(false),
     m = useRef(null);
   return (
+    useEffect(() => (s ? Music.start() : Music.stop(), () => Music.stop()), [s]),
     useEffect(() => {
       if (s)
         return (
@@ -545,7 +659,7 @@ function beep() {
     });
   } catch {}
 }
-function Ring({ left: t, total: i, color: e, running: l, done: s, onClick: n }) {
+function Ring({ left: t, total: i, color: e, running: l, done: s, music: mu, onClick: n }) {
   const r = 2 * Math.PI * 92,
     d = i ? t / i : 0,
     m = String(Math.floor(t / 60)).padStart(2, "0"),
@@ -568,7 +682,8 @@ function Ring({ left: t, total: i, color: e, running: l, done: s, onClick: n }) 
       }),
     ),
     React.createElement("div", { className: "time", style: { color: s ? e : void 0 } }, m, ":", a),
-    React.createElement("div", { className: "hint" }, s ? "הזמן נגמר" : l ? "רץ" : "רווח להתחלה"),
+    React.createElement("div", { className: "hint" }, s ? "הזמן נגמר" : l ? (mu ? "רץ ♪" : "רץ") : "רווח להתחלה"),
+    React.createElement("div", { className: "mhint" }, "M · מוזיקה " + (mu ? "פועלת" : "כבויה")),
   );
 }
 function revealTotal(t) {
@@ -670,6 +785,7 @@ function App() {
     [e, l] = useState(0),
     [s, n] = useState({}),
     r = useTimer(),
+    [mu, setMu] = useState(Music.isOn()),
     d = t == null ? null : LESSONS[t],
     m = useMemo(() => (d ? slidesOf(d) : []), [d]),
     a = m[e],
@@ -689,15 +805,20 @@ function App() {
       (i(f), l(0), r.reset());
     },
     k = a?.kind === "slide";
+  useWakeLock();
   useEffect(() => {
     const f = (c) => {
+      if (c.target.tagName !== "INPUT" && (c.key === "m" || c.key === "M" || c.key === "צ")) {
+        setMu(Music.toggle(r.running));
+        return;
+      }
       c.target.tagName !== "INPUT" &&
         (c.key === "ArrowLeft" || c.key === "PageDown"
           ? (c.preventDefault(), $(1))
           : c.key === "ArrowRight" || c.key === "PageUp"
             ? (c.preventDefault(), $(-1))
             : c.key === " "
-              ? (c.preventDefault(), r.toggle())
+              ? (c.preventDefault(), a?.kind === "item" && r.toggle())
               : c.key === "Enter" || c.key === "ArrowDown"
                 ? (c.preventDefault(), g())
                 : c.key === "ArrowUp"
@@ -754,7 +875,7 @@ function App() {
             React.createElement(
               "span",
               null,
-              "במחשב: חיצים ← → לדפדוף · Enter לחשיפת סעיף · רווח לטיימר · 1–9 דקות · Esc לתפריט",
+              "במחשב: חיצים ← → לדפדוף · Enter לחשיפת סעיף · רווח לטיימר · 1–9 דקות · M מוזיקה (" + (mu ? "פועלת" : "כבויה") + ") · Esc לתפריט",
             ),
             React.createElement("span", null, "בטלפון: הקשה בצד שמאל — הבא, בצד ימין — הקודם"),
           ),
@@ -849,6 +970,7 @@ function App() {
                 color: u,
                 running: r.running,
                 done: r.done,
+                music: mu,
                 onClick: r.toggle,
               }),
               React.createElement(
@@ -1002,6 +1124,7 @@ aside{grid-area:side;display:flex;flex-direction:column;align-items:center;justi
 .ring .arc{fill:none;stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset 1s linear}
 .ring .time{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   font-size:2.6em;font-weight:700;font-variant-numeric:tabular-nums;direction:ltr}
+.ring .mhint{position:absolute;left:0;right:0;bottom:14%;text-align:center;color:var(--muted);font-size:.5em;opacity:.7}
 .ring .hint{position:absolute;left:0;right:0;bottom:24%;text-align:center;color:var(--muted);font-size:.7em}
 .ring.done .time{animation:blink 1s step-end 4}
 @keyframes blink{50%{opacity:.25}}

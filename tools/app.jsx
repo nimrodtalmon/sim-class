@@ -497,7 +497,7 @@ function SlideBody({ lines: t, revealed: i }) {
   }
   return React.createElement("div", { className: l }, e.map(r));
 }
-// ---- timer music: small generative loops (WebAudio, no files, no network) ----
+// ---- timer music: calm generative lo-fi loops (four variants) (WebAudio, no files, no network) ----
 // Style, key, progression and tempo are seeded by the slide's text; the melody is "read" from that text,
 // so each question has its own tune (the same tune every time it is shown).
 const Music = (() => {
@@ -505,34 +505,18 @@ const Music = (() => {
   let cfg = null, seedText = "", chars = [], ci = 0, mel = 4;
   let on = true;
   try { on = localStorage.getItem("simMusic") !== "off"; } catch {}
-  const PROGS = {
-    lofi: [
-      [[0, 4, 7, 11], [9, 12, 16, 19], [5, 9, 12, 16], [7, 11, 14, 17]],
-      [[2, 5, 9, 12], [7, 11, 14, 17], [0, 4, 7, 11], [9, 12, 16, 19]],
-      [[5, 9, 12, 16], [4, 7, 11, 14], [9, 12, 16, 19], [0, 4, 7, 11]],
-      [[0, 4, 7, 11], [5, 9, 12, 16], [0, 4, 7, 11], [7, 11, 14, 17]],
-    ],
-    bossa: [
-      [[2, 5, 9, 12], [7, 11, 14, 17], [0, 4, 7, 11], [0, 4, 7, 11]],
-      [[0, 4, 7, 11], [2, 5, 9, 12], [4, 7, 11, 14], [7, 11, 14, 17]],
-      [[9, 12, 16, 19], [2, 5, 9, 12], [7, 11, 14, 17], [0, 4, 7, 11]],
-    ],
-    waltz: [
-      [[0, 4, 7], [5, 9, 12], [7, 11, 14], [0, 4, 7]],
-      [[0, 4, 7], [9, 12, 16], [5, 9, 12], [7, 11, 14]],
-      [[0, 4, 7], [7, 11, 14], [9, 12, 16], [5, 9, 12]],
-    ],
-    chip: [
-      [[0, 4, 7], [7, 11, 14], [9, 12, 16], [5, 9, 12]],
-      [[9, 12, 16], [5, 9, 12], [0, 4, 7], [7, 11, 14]],
-      [[0, 4, 7], [5, 9, 12], [9, 12, 16], [7, 11, 14]],
-    ],
-  };
-  const STYLES = {
-    lofi: { bpm: [72, 88], swing: 0.18, steps: 16 },
-    bossa: { bpm: [96, 112], swing: 0, steps: 16 },
-    waltz: { bpm: [88, 104], swing: 0, steps: 12 },
-    chip: { bpm: [108, 124], swing: 0, steps: 16 },
+  const SOFT = [
+    [[0, 4, 7, 11, 14], [9, 12, 16, 19], [5, 9, 12, 16, 19], [7, 11, 14, 17]],   // Imaj9 vi7 IVmaj9 V7
+    [[2, 5, 9, 12], [7, 11, 14, 17], [0, 4, 7, 11, 14], [9, 12, 16, 19]],        // ii7 V7 Imaj9 vi7
+    [[5, 9, 12, 16], [4, 7, 11, 14], [9, 12, 16, 19], [0, 4, 7, 11, 14]],       // IVmaj7 iii7 vi7 Imaj9
+    [[0, 4, 7, 11], [5, 9, 12, 16], [0, 4, 7, 11], [5, 9, 12, 16, 19]],         // Imaj7 IVmaj7 (floating)
+  ];
+  const PROGS = { classic: SOFT, rain: SOFT, jazzy: SOFT, dreamy: SOFT };
+  const STYLES = {                                                // all lo-fi, calm; differ in groove and colour
+    classic: { bpm: [68, 76], swing: 0.15, steps: 16 },
+    rain: { bpm: [62, 68], swing: 0.1, steps: 16 },
+    jazzy: { bpm: [72, 80], swing: 0.22, steps: 16 },
+    dreamy: { bpm: [64, 72], swing: 0.12, steps: 16 },
   };
   const PENTA = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21];
   const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
@@ -548,10 +532,11 @@ const Music = (() => {
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     const comp = ctx.createDynamicsCompressor();
     master = ctx.createGain(); master.gain.value = 0;
-    master.connect(comp); comp.connect(ctx.destination);
+    const warm = ctx.createBiquadFilter(); warm.frequency.value = 3200;
+    master.connect(warm); warm.connect(comp); comp.connect(ctx.destination);
     echo = ctx.createDelay(); echo.delayTime.value = 0.3;
-    const fb = ctx.createGain(); fb.gain.value = 0.3;
-    const wet = ctx.createGain(); wet.gain.value = 0.35;
+    const fb = ctx.createGain(); fb.gain.value = 0.38;
+    const wet = ctx.createGain(); wet.gain.value = 0.32;
     echo.connect(fb); fb.connect(echo); echo.connect(wet); wet.connect(master);
   }
   function tone(f, t, dur, { type = "sine", vol = 0.1, att = 0.01, cut = 2000, toEcho = false } = {}) {
@@ -585,34 +570,42 @@ const Music = (() => {
     mel = Math.max(0, Math.min(PENTA.length - 1, mel + [-2, -1, 0, 1, 2, 1, -1][c.charCodeAt(0) % 7]));
     return PENTA[mel];
   }
+  function pad(f, t, dur, vol) {                                   // two slightly detuned voices, slow swell
+    tone(f * 1.003, t, dur, { type: "triangle", vol, att: Math.min(1.2, dur / 3), cut: 900 });
+    tone(f * 0.997, t, dur, { type: "sine", vol, att: Math.min(1.2, dur / 3), cut: 900 });
+  }
+  function crackle(t) {                                           // vinyl dust
+    if (Math.random() < 0.35) noise(t + Math.random() * cfg.s16, 0.004, 0.012 + Math.random() * 0.01, 2500);
+  }
   function play(i, t) {
     const { style, s16, root, prog } = cfg, n = STYLES[style].steps;
     const bar = Math.floor(i / n) % prog.length, pos = i % n, ch = prog[bar];
     if (pos % 2) t += s16 * STYLES[style].swing;
-    if (style === "lofi") {
-      if (pos === 0) ch.forEach((x, k) => tone(hz(root + 48 + x), t + k * 0.012, s16 * 15, { type: "triangle", vol: 0.045, att: 0.04, cut: 1400 }));
-      if (pos === 0 || pos === 10) tone(hz(root + 36 + ch[0]), t, s16 * 5, { vol: 0.16, att: 0.02, cut: 500 });
-      if (pos === 0 || pos === 7 || pos === 10) kick(t);
-      if (pos === 4 || pos === 12) noise(t, 0.12, 0.06, 1800);
-      if (pos % 2 === 0) noise(t, 0.04, pos % 4 ? 0.012 : 0.02, 7000);
-      if (pos % 2 === 0) { const m = textNote(); if (m != null) { tone(hz(root + 72 + m), t, 0.9, { vol: 0.06, att: 0.005, cut: 4000, toEcho: true }); tone(hz(root + 84 + m), t, 0.25, { vol: 0.012, att: 0.003, cut: 6000 }); } }
-    } else if (style === "bossa") {
-      if ([0, 3, 6, 10, 12].includes(pos)) ch.forEach((x, k) => tone(hz(root + 52 + x), t + k * 0.008, s16 * 1.6, { type: "triangle", vol: 0.035, att: 0.008, cut: 1800 }));
-      if (pos === 0 || pos === 8) tone(hz(root + 36 + ch[0]), t, s16 * 5, { vol: 0.17, att: 0.015, cut: 500 });
-      if (pos === 6 || pos === 14) tone(hz(root + 43 + ch[0]), t, s16 * 2, { vol: 0.12, att: 0.015, cut: 500 });
-      if ([0, 3, 6, 10, 12].includes(pos)) noise(t, 0.03, 0.05, 3500);         // rim / clave
-      noise(t, 0.035, pos % 2 ? 0.008 : 0.014, 8000);                            // shaker
-      if (pos % 4 === 0 || pos % 4 === 3) { const m = textNote(); if (m != null) tone(hz(root + 72 + m), t, s16 * 3.5, { vol: 0.05, att: 0.03, cut: 2600, toEcho: true }); }
-    } else if (style === "waltz") {
-      if (pos === 0) tone(hz(root + 36 + ch[0]), t, s16 * 11, { vol: 0.14, att: 0.02, cut: 600 });
-      if (pos === 4 || pos === 8) ch.forEach((x, k) => tone(hz(root + 55 + x), t + k * 0.01, s16 * 3.5, { type: "triangle", vol: 0.03, att: 0.01, cut: 1600 }));
-      if (pos % 2 === 0) { const m = textNote(); if (m != null) { tone(hz(root + 76 + m), t, 1.2, { vol: 0.055, att: 0.003, cut: 5000, toEcho: true }); tone(hz(root + 88 + m), t, 0.3, { vol: 0.012, att: 0.002, cut: 7000 }); } }
-    } else {                                                                      // chip
-      tone(hz(root + 60 + ch[pos % ch.length]), t, s16 * 0.9, { type: "square", vol: 0.018, att: 0.003, cut: 1600 });
-      if (pos % 4 === 0) tone(hz(root + 36 + ch[0]), t, s16 * 3, { type: "triangle", vol: 0.15, att: 0.005, cut: 900 });
-      if (pos === 0 || pos === 8) kick(t, 0.28);
-      if (pos === 4 || pos === 12) noise(t, 0.08, 0.05, 2500);
-      if (pos % 2 === 0) { const m = textNote(); if (m != null) tone(hz(root + 72 + m), t, s16 * 1.8, { type: "square", vol: 0.022, att: 0.004, cut: 2400 }); }
+    const mel = (d, vol, cut) => { const m = textNote(); if (m != null) tone(hz(root + 72 + m), t, d, { vol, att: 0.02, cut, toEcho: true }); };
+    if (style === "classic") {                                    // keys on the bar, soft boom-bap, quarter-note melody
+      if (pos === 0) ch.forEach((x, k) => tone(hz(root + 48 + x), t + k * 0.02, s16 * 16, { type: "triangle", vol: 0.032, att: 0.09, cut: 1000 }));
+      if (pos === 0 || pos === 10) { tone(hz(root + 36 + ch[0]), t, s16 * 6, { vol: 0.13, att: 0.04, cut: 320 }); kick(t, 0.16); }
+      if (pos === 4 || pos === 12) noise(t, 0.16, 0.018, 1200);
+      if (pos % 4 === 0) mel(1.4, 0.04, 2200);
+    } else if (style === "rain") {                                // slow, half-time, lazy chord stabs, crackle
+      if (pos === 0 || pos === 7) ch.forEach((x, k) => tone(hz(root + 48 + x), t + k * 0.03, s16 * (pos ? 9 : 7), { type: "triangle", vol: 0.028, att: 0.06, cut: 900 }));
+      if (pos === 0) { tone(hz(root + 36 + ch[0]), t, s16 * 12, { vol: 0.12, att: 0.05, cut: 300 }); kick(t, 0.14); }
+      if (pos === 8) noise(t, 0.22, 0.016, 1000);
+      crackle(t);
+      if (pos === 2 || pos === 11) mel(1.8, 0.035, 1900);
+    } else if (style === "jazzy") {                               // walking-ish bass, swung soft hats
+      if (pos === 0 || pos === 6) ch.forEach((x, k) => tone(hz(root + 50 + x), t + k * 0.015, s16 * 5.5, { type: "triangle", vol: 0.028, att: 0.05, cut: 1100 }));
+      if (pos % 4 === 0) tone(hz(root + 36 + [ch[0], ch[2] - 12, ch[0] + 12, ch[1] - 12][pos / 4]), t, s16 * 3.5, { vol: 0.11, att: 0.03, cut: 340 });
+      if (pos === 0 || pos === 7 || pos === 10) kick(t, 0.13);
+      if (pos === 4 || pos === 12) noise(t, 0.14, 0.016, 1300);
+      if (pos % 2 === 0) noise(t, 0.03, 0.006, 6000);
+      if (pos % 4 === 2) mel(1.1, 0.034, 2100);
+    } else {                                                      // dreamy: pads + soft beat + bell melody with echo
+      if (pos === 0) ch.forEach((x) => pad(hz(root + 48 + x), t, s16 * 17, 0.02));
+      if (pos === 0 || pos === 10) { tone(hz(root + 36 + ch[0]), t, s16 * 6, { vol: 0.1, att: 0.06, cut: 300 }); kick(t, 0.13); }
+      if (pos === 4 || pos === 12) noise(t, 0.18, 0.014, 1100);
+      crackle(t);
+      if (pos === 0 || pos === 6 || pos === 10) mel(2.4, 0.03, 2600);
     }
   }
   function tick() {
@@ -631,7 +624,7 @@ const Music = (() => {
       step = 0; next = ctx.currentTime + 0.08;
       master.gain.cancelScheduledValues(ctx.currentTime);
       master.gain.setValueAtTime(0, ctx.currentTime);
-      master.gain.linearRampToValueAtTime(1, ctx.currentTime + 1.5);
+      master.gain.linearRampToValueAtTime(1.6, ctx.currentTime + 2.5);
       timerId = setInterval(tick, 25); tick();
     } catch {}
   }

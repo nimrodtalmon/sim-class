@@ -4,8 +4,8 @@ Sources: `site.json`, `videos.md`, `labs.md`, `exercises.md` (+ `exercises/fig/`
 Everything else is generated; never hand-edit the HTML.
 
 ```
-python3 tools/build.py        # exercises.md -> exercises/index.html  (needs node; fetches esbuild via npx)
-python3 tools/build_pdfs.py   # exercises.md -> pdfs/lesson-N.pdf + pdfs/all.pdf (exercises only; needs playwright)
+python3 tools/build.py        # exercises.md + tools/app.jsx -> exercises/index.html  (needs node; fetches esbuild via npx)
+python3 tools/build_pdfs.py   # exercises.md -> pdfs/lesson-N.pdf (exercises only; needs playwright)
 python3 tools/build_site.py   # -> index.html, videos.html, labs.html, pdfs.html
 ```
 After changing exercises.md, run all three.

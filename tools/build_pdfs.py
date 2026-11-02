@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""exercises.md -> pdfs/lesson-N.pdf (class exercises only, no decks) + pdfs/all.pdf.
+"""exercises.md -> pdfs/lesson-N.pdf (class exercises only, no decks, room to write).
 
 Usage (from the repo root):  python3 tools/build_pdfs.py
 Needs Python playwright with Chromium. Run tools/build_site.py afterwards (pdfs.html lists the files).
@@ -37,7 +37,6 @@ strong,b{font-weight:600}
 .imgs{display:flex;gap:5mm;justify-content:center;align-items:flex-end;margin:2mm 0}
 .imgs img{max-height:55mm;max-width:100%;object-fit:contain}
 .imgs.n3 img{max-height:48mm;max-width:31%}
-.space{height:22mm}
 .intro{margin:0 0 4mm}
 .intro p{margin:0 0 1.2mm}
 .intro ul{margin:0 0 1.2mm;padding-inline-start:6mm}
@@ -137,7 +136,9 @@ def lesson_html(L, course):
                 first = f'<p><span class="id">{it["id"]}</span> {inline(body[0].strip())}</p>'; body = body[1:]
             else:
                 first = f'<p><span class="id">{it["id"]}</span></p>'
-            q = f'<div class="q">{first}{block(body)}<div class="space"></div></div>'
+            nparts = sum(1 for x in body if HEB_PART.match(x.strip()))
+            space = min(40 + 12 * nparts, 90)                       # mm of empty room to write in
+            q = f'<div class="q">{first}{block(body)}<div style="height:{space}mm"></div></div>'
             parts.append(f'<div class="keep">{head}{q}</div>' if k == 0 else q)   # tier title never alone at page end
     parts.append('</section>')
     return ''.join(parts)
@@ -167,7 +168,6 @@ def main():
         page = b.new_page()
         tmp = OUT / '_tmp.html'
         jobs = [(f'lesson-{L["num"]}.pdf', [L], f'{course} — שיעור {L["num"]}') for L in keep]
-        jobs.append(('all.pdf', keep, f'{course} — תרגילי כיתה'))
         for name, ls, title in jobs:
             tmp.write_text(doc(ls, course, title), encoding='utf8')
             page.goto(tmp.as_uri(), wait_until='networkidle')

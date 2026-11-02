@@ -223,8 +223,6 @@ def build_pdfs(site):
                   if (m := re.match(r'lesson-(\d+)\.pdf$', f.name)))
     out = [f'<a class="back" href="./">→ {E(site["course"])}</a>', '<h1>תרגילי כיתה — PDF</h1>',
            '<p class="intro">התרגילים של כל שיעור (בלי המצגות), עם מקום לכתוב. להדפסה או לטאבלט.</p>']
-    if (ROOT / 'pdfs' / 'all.pdf').exists():
-        out.append('<a class="folder" href="pdfs/all.pdf" target="_blank" rel="noopener">כל השיעורים בקובץ אחד</a>')
     rows = ''.join(f'<li><span class="n">{n}</span><span class="t">{E(titles.get(n, ""))}</span>'
                    f'<a class="go" style="color:{COLORS[i % 3]}" href="pdfs/lesson-{n}.pdf" target="_blank" '
                    f'rel="noopener">PDF ↓</a></li>' for i, n in enumerate(nums))

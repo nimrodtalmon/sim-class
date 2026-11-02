@@ -216,6 +216,22 @@ def build_labs(site):
     return page(f'{site["course"]} — מעבדות', LAB_CSS, '\n'.join(out), site)
 
 
+# ---------------- class-exercise PDFs (files made by tools/build_pdfs.py) ----------------
+def build_pdfs(site):
+    titles = lesson_titles()
+    nums = sorted(int(m.group(1)) for f in (ROOT / 'pdfs').glob('lesson-*.pdf')
+                  if (m := re.match(r'lesson-(\d+)\.pdf$', f.name)))
+    out = [f'<a class="back" href="./">→ {E(site["course"])}</a>', '<h1>תרגילי כיתה — PDF</h1>',
+           '<p class="intro">התרגילים של כל שיעור (בלי המצגות), עם מקום לכתוב. להדפסה או לטאבלט.</p>']
+    if (ROOT / 'pdfs' / 'all.pdf').exists():
+        out.append('<a class="folder" href="pdfs/all.pdf" target="_blank" rel="noopener">כל השיעורים בקובץ אחד</a>')
+    rows = ''.join(f'<li><span class="n">{n}</span><span class="t">{E(titles.get(n, ""))}</span>'
+                   f'<a class="go" style="color:{COLORS[i % 3]}" href="pdfs/lesson-{n}.pdf" target="_blank" '
+                   f'rel="noopener">PDF ↓</a></li>' for i, n in enumerate(nums))
+    out.append(f'<ul class="labs">{rows}</ul>')
+    return page(f'{site["course"]} — תרגילי כיתה PDF', LAB_CSS, '\n'.join(out), site)
+
+
 # ---------------- recordings (unlisted) ----------------
 def build_recordings(site):
     lines = (ROOT / 'recordings.md').read_text(encoding='utf8').split('\n')
@@ -234,6 +250,7 @@ def build_recordings(site):
 def main():
     site = json.loads((ROOT / 'site.json').read_text(encoding='utf8'))
     for name, fn in [('index.html', build_home), ('videos.html', build_videos), ('labs.html', build_labs),
+                       ('pdfs.html', build_pdfs),
                      ('recordings.html', build_recordings)]:
         (ROOT / name).write_text(fn(site), encoding='utf8')
         print('wrote', name)

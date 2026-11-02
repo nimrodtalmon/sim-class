@@ -497,27 +497,59 @@ function SlideBody({ lines: t, revealed: i }) {
   }
   return React.createElement("div", { className: l }, e.map(r));
 }
-// ---- timer music: a small generative lo-fi loop (WebAudio, no files, no network); new key/progression each start ----
+// ---- timer music: small generative loops (WebAudio, no files, no network) ----
+// Style, key, progression and tempo are seeded by the slide's text; the melody is "read" from that text,
+// so each question has its own tune (the same tune every time it is shown).
 const Music = (() => {
-  let ctx = null, master = null, echo = null, timerId = null, next = 0, step = 0, prog = null, root = 0, mel = 0;
+  let ctx = null, master = null, echo = null, timerId = null, next = 0, step = 0;
+  let cfg = null, seedText = "", chars = [], ci = 0, mel = 4;
   let on = true;
   try { on = localStorage.getItem("simMusic") !== "off"; } catch {}
-  const BPM = 82, S16 = 60 / BPM / 4;
-  const PROGS = [
-    [[0, 4, 7, 11], [9, 12, 16, 19], [5, 9, 12, 16], [7, 11, 14, 17]],      // Imaj7 vi7 IVmaj7 V7
-    [[2, 5, 9, 12], [7, 11, 14, 17], [0, 4, 7, 11], [9, 12, 16, 19]],      // ii7 V7 Imaj7 vi7
-    [[5, 9, 12, 16], [4, 7, 11, 14], [9, 12, 16, 19], [0, 4, 7, 11]],      // IVmaj7 iii7 vi7 Imaj7
-    [[0, 4, 7, 11], [5, 9, 12, 16], [0, 4, 7, 11], [7, 11, 14, 17]],       // Imaj7 IVmaj7 Imaj7 V7
-  ];
+  const PROGS = {
+    lofi: [
+      [[0, 4, 7, 11], [9, 12, 16, 19], [5, 9, 12, 16], [7, 11, 14, 17]],
+      [[2, 5, 9, 12], [7, 11, 14, 17], [0, 4, 7, 11], [9, 12, 16, 19]],
+      [[5, 9, 12, 16], [4, 7, 11, 14], [9, 12, 16, 19], [0, 4, 7, 11]],
+      [[0, 4, 7, 11], [5, 9, 12, 16], [0, 4, 7, 11], [7, 11, 14, 17]],
+    ],
+    bossa: [
+      [[2, 5, 9, 12], [7, 11, 14, 17], [0, 4, 7, 11], [0, 4, 7, 11]],
+      [[0, 4, 7, 11], [2, 5, 9, 12], [4, 7, 11, 14], [7, 11, 14, 17]],
+      [[9, 12, 16, 19], [2, 5, 9, 12], [7, 11, 14, 17], [0, 4, 7, 11]],
+    ],
+    waltz: [
+      [[0, 4, 7], [5, 9, 12], [7, 11, 14], [0, 4, 7]],
+      [[0, 4, 7], [9, 12, 16], [5, 9, 12], [7, 11, 14]],
+      [[0, 4, 7], [7, 11, 14], [9, 12, 16], [5, 9, 12]],
+    ],
+    chip: [
+      [[0, 4, 7], [7, 11, 14], [9, 12, 16], [5, 9, 12]],
+      [[9, 12, 16], [5, 9, 12], [0, 4, 7], [7, 11, 14]],
+      [[0, 4, 7], [5, 9, 12], [9, 12, 16], [7, 11, 14]],
+    ],
+  };
+  const STYLES = {
+    lofi: { bpm: [72, 88], swing: 0.18, steps: 16 },
+    bossa: { bpm: [96, 112], swing: 0, steps: 16 },
+    waltz: { bpm: [88, 104], swing: 0, steps: 12 },
+    chip: { bpm: [108, 124], swing: 0, steps: 16 },
+  };
   const PENTA = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21];
   const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+  function rng(str) {                                            // string hash -> mulberry32
+    let h = 1779033703 ^ str.length;
+    for (let k = 0; k < str.length; k++) { h = Math.imul(h ^ str.charCodeAt(k), 3432918353); h = (h << 13) | (h >>> 19); }
+    let a = h >>> 0;
+    return () => { a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+  const pick = (r, xs) => xs[Math.floor(r() * xs.length)];
   function init() {
     if (ctx) return;
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     const comp = ctx.createDynamicsCompressor();
     master = ctx.createGain(); master.gain.value = 0;
     master.connect(comp); comp.connect(ctx.destination);
-    echo = ctx.createDelay(); echo.delayTime.value = S16 * 3;
+    echo = ctx.createDelay(); echo.delayTime.value = 0.3;
     const fb = ctx.createGain(); fb.gain.value = 0.3;
     const wet = ctx.createGain(); wet.gain.value = 0.35;
     echo.connect(fb); fb.connect(echo); echo.connect(wet); wet.connect(master);
@@ -539,37 +571,64 @@ const Music = (() => {
     g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
     src.connect(hp); hp.connect(g); g.connect(master); src.start(t);
   }
-  function kick(t) {
+  function kick(t, vol = 0.35) {
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.18);
-    g.gain.setValueAtTime(0.35, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
     o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.35);
   }
-  function play16(i, t) {
-    const bar = Math.floor(i / 16) % 4, pos = i % 16, ch = prog[bar];
-    const swing = pos % 2 ? S16 * 0.18 : 0;
-    t += swing;
-    if (pos === 0) ch.forEach((n, k) => tone(hz(root + 48 + n), t + k * 0.012, S16 * 15, { type: "triangle", vol: 0.045, att: 0.04, cut: 1400 }));
-    if (pos === 0 || pos === 10) tone(hz(root + 36 + ch[0]), t, S16 * 5, { vol: 0.16, att: 0.02, cut: 500 });
-    if (pos === 0 || pos === 7 || pos === 10) kick(t);
-    if (pos === 4 || pos === 12) noise(t, 0.12, 0.06, 1800);
-    if (pos % 2 === 0) noise(t, 0.04, pos % 4 ? 0.012 : 0.02, 7000);
-    if (pos % 2 === 0 && Math.random() < 0.55) {                         // music-box melody: pentatonic random walk
-      mel = Math.max(0, Math.min(PENTA.length - 1, mel + [-2, -1, -1, 1, 1, 2][Math.floor(Math.random() * 6)]));
-      tone(hz(root + 72 + PENTA[mel]), t, 0.9, { type: "sine", vol: 0.06, att: 0.005, cut: 4000, toEcho: true });
-      tone(hz(root + 84 + PENTA[mel]), t, 0.25, { type: "sine", vol: 0.012, att: 0.003, cut: 6000 });
+  // next melody note "read" from the slide text: letters walk the pentatonic scale, spaces/punctuation are rests
+  function textNote() {
+    if (!chars.length) return null;
+    const c = chars[ci++ % chars.length];
+    if (!/[\p{L}\p{N}]/u.test(c)) return null;
+    mel = Math.max(0, Math.min(PENTA.length - 1, mel + [-2, -1, 0, 1, 2, 1, -1][c.charCodeAt(0) % 7]));
+    return PENTA[mel];
+  }
+  function play(i, t) {
+    const { style, s16, root, prog } = cfg, n = STYLES[style].steps;
+    const bar = Math.floor(i / n) % prog.length, pos = i % n, ch = prog[bar];
+    if (pos % 2) t += s16 * STYLES[style].swing;
+    if (style === "lofi") {
+      if (pos === 0) ch.forEach((x, k) => tone(hz(root + 48 + x), t + k * 0.012, s16 * 15, { type: "triangle", vol: 0.045, att: 0.04, cut: 1400 }));
+      if (pos === 0 || pos === 10) tone(hz(root + 36 + ch[0]), t, s16 * 5, { vol: 0.16, att: 0.02, cut: 500 });
+      if (pos === 0 || pos === 7 || pos === 10) kick(t);
+      if (pos === 4 || pos === 12) noise(t, 0.12, 0.06, 1800);
+      if (pos % 2 === 0) noise(t, 0.04, pos % 4 ? 0.012 : 0.02, 7000);
+      if (pos % 2 === 0) { const m = textNote(); if (m != null) { tone(hz(root + 72 + m), t, 0.9, { vol: 0.06, att: 0.005, cut: 4000, toEcho: true }); tone(hz(root + 84 + m), t, 0.25, { vol: 0.012, att: 0.003, cut: 6000 }); } }
+    } else if (style === "bossa") {
+      if ([0, 3, 6, 10, 12].includes(pos)) ch.forEach((x, k) => tone(hz(root + 52 + x), t + k * 0.008, s16 * 1.6, { type: "triangle", vol: 0.035, att: 0.008, cut: 1800 }));
+      if (pos === 0 || pos === 8) tone(hz(root + 36 + ch[0]), t, s16 * 5, { vol: 0.17, att: 0.015, cut: 500 });
+      if (pos === 6 || pos === 14) tone(hz(root + 43 + ch[0]), t, s16 * 2, { vol: 0.12, att: 0.015, cut: 500 });
+      if ([0, 3, 6, 10, 12].includes(pos)) noise(t, 0.03, 0.05, 3500);         // rim / clave
+      noise(t, 0.035, pos % 2 ? 0.008 : 0.014, 8000);                            // shaker
+      if (pos % 4 === 0 || pos % 4 === 3) { const m = textNote(); if (m != null) tone(hz(root + 72 + m), t, s16 * 3.5, { vol: 0.05, att: 0.03, cut: 2600, toEcho: true }); }
+    } else if (style === "waltz") {
+      if (pos === 0) tone(hz(root + 36 + ch[0]), t, s16 * 11, { vol: 0.14, att: 0.02, cut: 600 });
+      if (pos === 4 || pos === 8) ch.forEach((x, k) => tone(hz(root + 55 + x), t + k * 0.01, s16 * 3.5, { type: "triangle", vol: 0.03, att: 0.01, cut: 1600 }));
+      if (pos % 2 === 0) { const m = textNote(); if (m != null) { tone(hz(root + 76 + m), t, 1.2, { vol: 0.055, att: 0.003, cut: 5000, toEcho: true }); tone(hz(root + 88 + m), t, 0.3, { vol: 0.012, att: 0.002, cut: 7000 }); } }
+    } else {                                                                      // chip
+      tone(hz(root + 60 + ch[pos % ch.length]), t, s16 * 0.9, { type: "square", vol: 0.018, att: 0.003, cut: 1600 });
+      if (pos % 4 === 0) tone(hz(root + 36 + ch[0]), t, s16 * 3, { type: "triangle", vol: 0.15, att: 0.005, cut: 900 });
+      if (pos === 0 || pos === 8) kick(t, 0.28);
+      if (pos === 4 || pos === 12) noise(t, 0.08, 0.05, 2500);
+      if (pos % 2 === 0) { const m = textNote(); if (m != null) tone(hz(root + 72 + m), t, s16 * 1.8, { type: "square", vol: 0.022, att: 0.004, cut: 2400 }); }
     }
   }
   function tick() {
-    while (next < ctx.currentTime + 0.15) { play16(step++, next); next += S16; }
+    while (next < ctx.currentTime + 0.15) { play(step++, next); next += cfg.s16; }
   }
   function start() {
     if (!on || timerId) return;
     try {
       init(); ctx.resume();
-      prog = PROGS[Math.floor(Math.random() * PROGS.length)];
-      root = [0, 2, 3, 5, 7, 8, 10][Math.floor(Math.random() * 7)] - 2;
-      step = 0; mel = 4; next = ctx.currentTime + 0.08;
+      const r = rng(seedText || String(Math.random()));
+      const style = pick(r, Object.keys(STYLES)), S = STYLES[style];
+      const bpm = S.bpm[0] + Math.floor(r() * (S.bpm[1] - S.bpm[0] + 1));
+      cfg = { style, s16: 60 / bpm / 4, root: pick(r, [0, 2, 3, 5, 7, 8, 10]) - 2, prog: pick(r, PROGS[style]) };
+      echo.delayTime.value = cfg.s16 * 3;
+      chars = Array.from(seedText.replace(/\s+/g, " ")); ci = 0; mel = 4;
+      step = 0; next = ctx.currentTime + 0.08;
       master.gain.cancelScheduledValues(ctx.currentTime);
       master.gain.setValueAtTime(0, ctx.currentTime);
       master.gain.linearRampToValueAtTime(1, ctx.currentTime + 1.5);
@@ -587,6 +646,8 @@ const Music = (() => {
   }
   return {
     start, stop,
+    setSeed: (s) => { seedText = s || ""; },
+    style: () => cfg && cfg.style,
     isOn: () => on,
     toggle(running) {
       on = !on;
@@ -690,9 +751,7 @@ function revealTotal(t) {
   return t
     ? t.kind === "slide"
       ? revealCount(t.item.lines)
-      : t.kind === "item"
-        ? t.item.lines.filter((i) => SUB.test(i.trim())).length
-        : 0
+      : 0
     : 0;
 }
 function tileMeta(t) {
@@ -805,6 +864,7 @@ function App() {
       (i(f), l(0), r.reset());
     },
     k = a?.kind === "slide";
+  Music.setSeed(a ? [a.item?.id, a.item?.title, ...(a.item?.lines || a.lines || [])].filter(Boolean).join(" ") : "");
   useWakeLock();
   useEffect(() => {
     const f = (c) => {
@@ -814,16 +874,12 @@ function App() {
       }
       c.target.tagName !== "INPUT" &&
         (c.key === "ArrowLeft" || c.key === "PageDown"
-          ? (c.preventDefault(), $(1))
+          ? (c.preventDefault(), p < h ? g() : $(1))
           : c.key === "ArrowRight" || c.key === "PageUp"
-            ? (c.preventDefault(), $(-1))
+            ? (c.preventDefault(), p > 0 ? y() : $(-1))
             : c.key === " "
               ? (c.preventDefault(), a?.kind === "item" && r.toggle())
-              : c.key === "Enter" || c.key === "ArrowDown"
-                ? (c.preventDefault(), g())
-                : c.key === "ArrowUp"
-                  ? (c.preventDefault(), y())
-                  : c.key === "r" || c.key === "R"
+              : c.key === "r" || c.key === "R"
                     ? r.reset()
                     : c.key === "Escape"
                       ? i(null)
@@ -834,7 +890,7 @@ function App() {
   const v = (f) => {
     (f.pointerType !== "touch" && f.pointerType !== "pen") ||
       f.target.closest("a,button,input,header") ||
-      (f.clientX < window.innerWidth / 2 ? (p < h ? g() : $(1)) : $(-1));
+      (f.clientX < window.innerWidth / 2 ? (p < h ? g() : $(1)) : p > 0 ? y() : $(-1));
   };
   return d == null
     ? React.createElement(
@@ -875,7 +931,7 @@ function App() {
             React.createElement(
               "span",
               null,
-              "במחשב: חיצים ← → לדפדוף · Enter לחשיפת סעיף · רווח לטיימר · 1–9 דקות · M מוזיקה (" + (mu ? "פועלת" : "כבויה") + ") · Esc לתפריט",
+              "במחשב: חיצים ← → לדפדוף · רווח לטיימר · 1–9 דקות · M מוזיקה (" + (mu ? "פועלת" : "כבויה") + ") · Esc לתפריט",
             ),
             React.createElement("span", null, "בטלפון: הקשה בצד שמאל — הבא, בצד ימין — הקודם"),
           ),
@@ -949,7 +1005,7 @@ function App() {
                         React.createElement("span", { className: "qid" }, a.item.id),
                         a.item.title && React.createElement("span", { className: "qtitle" }, a.item.title),
                       ),
-                      React.createElement(Body, { lines: a.item.lines, revealed: p }),
+                      React.createElement(Body, { lines: a.item.lines, revealed: 99 }),
                       h > 0 &&
                         React.createElement(
                           "button",
